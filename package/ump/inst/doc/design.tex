@@ -1,0 +1,1336 @@
+
+\documentclass{article}
+
+\usepackage{indentfirst}
+\usepackage{apalike}
+\usepackage{amsmath}
+\usepackage{url}
+\newcommand{\set}[1]{\{\, #1 \,\}}
+\DeclareMathOperator{\pr}{Pr}
+\DeclareMathOperator{\var}{var}
+\DeclareMathOperator{\logit}{logit}
+\newcommand{\BinomialDis}{\text{Bin}}
+\newcommand{\NegativeBinomialDis}{\text{NegBin}}
+\newcommand{\PoissonDis}{\text{Pois}}
+
+\RequirePackage{amsthm}
+\newtheorem{theorem}{Theorem}
+
+\begin{document}
+
+\title{Design of the \texttt{ump} Package}
+\author{Charles J. Geyer \and Glen D. Meeden}
+\maketitle
+
+\section{Introduction}
+
+\subsection{The UMP and UMPU Problems}
+
+The following is mostly taken from the first draft of the fuzzy confidence
+intervals and $P$-values paper.
+
+\subsubsection{UMP}
+
+Lehmann (1959, pp.~68--69) says for a one-parameter
+model with likelihood ratio monotone in the statistic $T(X)$
+there exists a UMP test
+having null hypothesis $H_0 = \set{ \vartheta : \vartheta \le \theta }$,
+alternative hypothesis $H_1 = \set{ \vartheta : \vartheta > \theta }$,
+significance level $\alpha$,
+and critical function $\phi$ defined by
+\begin{equation} \label{eq:ump-crit}
+   \phi(x, \alpha, \theta)
+   =
+   \begin{cases}
+   1, & T(x) > C
+   \\
+   \gamma, & T(x) = C
+   \\
+   0, & T(x) < C
+   \end{cases}
+\end{equation}
+where the constants $\gamma$ and $C$ are determined by
+$$
+   E_\theta\{\phi(X, \alpha, \theta)\} = \alpha.
+$$
+The description of the analogous lower-tailed test is
+the same except that all inequalities are reversed.
+
+The constant $C$ is clearly any $(1 - \alpha)$-th quantile of the distribution
+of $T(X)$ for the parameter value $\theta$.
+If $C$ is not an atom of this distribution, then
+the test is effectively not randomized and the value of $\gamma$ is
+irrelevant.  Otherwise
+\begin{equation} \label{eq:gamma-ump}
+   \gamma = \frac{\alpha - \pr_\theta\{T(X) > C\}}{\pr_\theta\{T(X) = C\}}.
+\end{equation}
+
+\subsubsection{UMPU} \label{sec:umpu}
+
+Lehmann (1959, pp.~126--127) says for a one-parameter
+exponential family model with canonical statistic $T(X)$ 
+and canonical parameter $\theta$
+there exists a UMPU test
+having null hypothesis $H_0 = \set{ \vartheta : \vartheta = \theta }$,
+alternative hypothesis $H_1 = \set{ \vartheta : \vartheta \neq \theta }$,
+significance level $\alpha$,
+and critical function $\phi$ defined by
+\begin{equation} \label{eq:umpu-crit}
+   \phi(x, \alpha, \theta)
+   =
+   \begin{cases}
+   1, & T(x) < C_1
+   \\
+   \gamma_1, & T(x) = C_1
+   \\
+   0, & C_1 < T(x) < C_2
+   \\
+   \gamma_2, & T(x) = C_2
+   \\
+   1, & C_2 < T(x)
+   \end{cases}
+\end{equation}
+where $C_1 \le C_2$ and the constants $\gamma_1$, $\gamma_2$, $C_1$, and $C_2$
+are determined by
+\begin{subequations}
+\begin{align}
+   E_\theta\{\phi(X, \alpha, \theta)\} & = \alpha
+   \label{eq:umpu-a}
+   \\
+   E_\theta\{T(X) \phi(X, \alpha, \theta)\} & = \alpha E_\theta\{T(X)\}
+   \label{eq:umpu-b}
+\end{align}
+\end{subequations}
+
+If $C_1 = C_2 = C$ in \eqref{eq:umpu-crit} then $\gamma_1 = \gamma_2 = \gamma$
+also.  This occurs only in a very special case.
+Define
+\begin{subequations}
+\begin{align}
+   p & = \pr_\theta\{T(X) = C\}
+   \label{eq:p}
+   \\
+   \mu & = E_\theta\{T(X)\}
+   \label{eq:mu}
+\end{align}
+\end{subequations}
+Then in order to satisfy \eqref{eq:umpu-a} and \eqref{eq:umpu-b} we must have
+\begin{align*}
+   1 - (1 - \gamma) p & = \alpha
+   \\
+   \mu - C (1 - \gamma) p & = \alpha \mu
+\end{align*}
+which solved for $\gamma$ and $C$ gives
+\begin{subequations}
+\begin{align}
+   \gamma & = 1 - \frac{1 - \alpha}{p}
+   \label{eq:umpu-spec-a}
+   \\
+   C & = \mu
+   \label{eq:umpu-spec-b}
+\end{align}
+\end{subequations}
+Thus this special case occurs only when $\mu$
+an atom of the distribution of $T(X)$ for the parameter value $\theta$,
+and then only for
+very large significance levels: $\alpha > 1 - p$.
+Hence this special case is of no practical importance,
+although
+it is of some computational importance to get every case right, no weird
+bogus results or crashes in unusual special cases.
+
+Returning to the general case, assume for a second that we have
+particular $C_1$ and $C_2$ that work for some $x$, $\alpha$, and $\theta$
+(we will see how to determine $C_1$ and $C_2$ presently).
+With $\mu$ still defined by \eqref{eq:mu} and with the definitions
+\begin{subequations}
+\begin{align}
+   p_i & = \pr_\theta\{ T(X) = C_i \}, \qquad i = 1, 2
+   \label{eq:pi}
+   \\
+   p_{1 2} & = \pr_\theta\{ C_1 < T(X) < C_2 \}
+   \label{eq:p12}
+   \\
+   m_{1 2} & = E_\theta\{ T(X) I_{(C_1, C_2)}[T(X)] \}
+   \label{eq:m12}
+\end{align}
+\end{subequations}
+\eqref{eq:umpu-a} and \eqref{eq:umpu-b} become
+\begin{subequations}
+\begin{align}
+   1 - (1 - \gamma_1) p_1 - (1 - \gamma_2) p_2 - p_{1 2}
+   & = \alpha
+   \label{eq:umpu-a-general}
+   \\
+   \mu - C_1 (1 - \gamma_1) p_1 - C_2 (1 - \gamma_2) p_2 - m_{1 2}
+   & = \alpha \mu
+   \label{eq:umpu-b-general}
+\end{align}
+\end{subequations}
+which solved for $\gamma_1$ and $\gamma_2$ give
+\begin{subequations}
+\begin{align}
+   \gamma_1
+   & =
+   1 - \frac{(1 - \alpha) (C_2 - \mu) + m_{1 2} - C_2 p_{1 2}}{p_1 (C_2 - C_1)}
+   \label{eq:gamma-1}
+   \\
+   \gamma_2
+   & =
+   1 - \frac{(1 - \alpha) (\mu - C_1) - m_{1 2} + C_1 p_{1 2}}{p_2 (C_2 - C_1)}
+   \label{eq:gamma-2}
+\end{align}
+\end{subequations}
+
+Note that \eqref{eq:gamma-1} and \eqref{eq:gamma-2} are linear in $\alpha$.
+They are valid over the range of $\alpha$ (if any) such that both equations
+give values between zero and one.
+
+Now we turn to the determination of $C_1$ and $C_2$.  We present an algorithm
+\label{pg:algo}
+that determines $\phi(x, \alpha, \theta)$ for any discrete one-parameter
+exponential family with canonical statistic $T(X)$ for all values
+of $x$ and $\alpha$ for one fixed value of $\theta$.
+\begin{enumerate}
+\item Start with $\alpha = 1$.
+\begin{enumerate}
+\item If $\mu$ given by \eqref{eq:mu} is an atom, then
+$\phi(x, \alpha, \theta)$ is given by
+\eqref{eq:umpu-crit} with $C_1 = C_2 = \mu$
+and $\gamma_1 = \gamma_2 = \gamma$
+given by \eqref{eq:p}, \eqref{eq:umpu-spec-a}, and \eqref{eq:umpu-spec-b}
+over the range of $\alpha$ such that
+\eqref{eq:umpu-spec-a} is between zero and one.
+\item If $\mu$ given by \eqref{eq:mu} is not an atom, then choose $C_1$
+and $C_2$ to be adjacent atoms such that $C_1 < \mu < C_2$ and
+$\phi(x, \alpha, \theta)$ is given by \eqref{eq:umpu-crit}
+with $\gamma_1$ and $\gamma_2$ given by
+\eqref{eq:pi}, \eqref{eq:p12}, \eqref{eq:m12},
+\eqref{eq:gamma-1}, and \eqref{eq:gamma-2}
+over the range of $\alpha$ such that both
+\eqref{eq:gamma-1} and \eqref{eq:gamma-2} are between zero and one.
+[Because $C_1$ and $C_2$ are adjacent atoms, $p_{1 2} = m_{1 2} = 0$,
+and $\alpha = 1$ gives $\gamma_1 = \gamma_2 = 1$, a valid solution.]
+\end{enumerate}
+\item Start with the smallest $\alpha$ for which $\phi(x, \alpha, \theta)$
+was determined in step 1 or a previous iteration of step 2.
+At this point, either $\gamma_1$ or $\gamma_2$
+is zero (or both are).
+\begin{enumerate}
+\item If $\gamma_1$ is zero, then decrease $C_1$ to the adjacent lower
+atom and set $\gamma_1 = 1$ [which does not change the value
+of $\phi(x, \alpha, \theta)$ for any $x$].
+\item If $\gamma_2$ is zero, then increase $C_2$ to the adjacent higher
+atom and set $\gamma_2 = 1$ [which does not change the value
+of $\phi(x, \alpha, \theta)$ for any $x$].
+\item Now $\phi(x, \alpha, \theta)$ is given by \eqref{eq:umpu-spec-a}
+with $\gamma_1$ and $\gamma_2$ given by
+\eqref{eq:pi}, \eqref{eq:p12}, \eqref{eq:m12},
+\eqref{eq:gamma-1}, and \eqref{eq:gamma-2}
+over the range of $\alpha$ such that both
+\eqref{eq:gamma-1} and \eqref{eq:gamma-2} are between zero and one
+[because of steps (a) and (b), both $\gamma_i$ are now greater than
+zero, so $\alpha$ can be decreased].
+\end{enumerate}
+\item Repeat step 2 until the whole range $0 \le \alpha \le 1$ is covered.
+\end{enumerate}
+
+This algorithm is certainly unwieldy, but it does make clear that
+$\alpha \mapsto \phi(x, \alpha, \theta)$ is (1) continuous, (2) piecewise
+linear, (3) nondecreasing, and (4) onto $[0, 1]$.
+Hence it is the distribution function of a continuous
+random variable (an abstract randomized $P$-value).
+Clearly, it is differentiable on
+each linear piece and the derivative is piecewise constant (a step function).
+
+\subsection{Endpoint Behavior} \label{sec:endpoint}
+
+The UMPU test is not well defined when the null hypothesis is on
+the boundary of the parameter space.  But equations \eqref{eq:umpu-crit},
+\eqref{eq:umpu-a},
+and \eqref{eq:umpu-b} still make sense and define a test.  Since
+the probability and the expectation in those equations are continuous
+in $\theta$ this also characterizes the behavior as $\theta$ converges
+to a boundary point (which we need to know to calculate fuzzy confidence
+intervals, which involve all $\theta$ in the parameter space).
+
+\begin{theorem} \label{th:umpu-end}
+Suppose the setup for a UMPU test described
+in the first paragraph of Section~\ref{sec:umpu}.
+In addition suppose that $T(X)$ has a topologically discrete distribution
+(concentrated on a countable set of atoms
+and the atoms topologically isolated) not concentrated at one point.
+If the support $S$ of $T(X)$ has a lower bound and $L$ is the two-point
+set consisting of the two smallest atoms of the support, then
+\begin{equation} \label{eq:umpu-end}
+   1 - \phi(x, \alpha, \theta) \to (1 - \alpha) I_L(x),
+   \qquad \text{as $\theta \to - \infty$}.
+\end{equation}
+Similarly, if the support has an upper bound and $L$ consists of the two
+largest atoms, then \eqref{eq:umpu-end} holds with $- \infty$ replaced by
+$+ \infty$.
+\end{theorem}
+\begin{proof}
+We do the case where the support has a lower bound.  The upper bound
+case is entirely analogous.
+
+The densities in the family of distributions of $T(X)$ have the form
+\begin{equation} \label{eq:expo-dens}
+   f_\theta(s) = \frac{1}{c(\theta)} e^{s \theta} \lambda(s),
+   \qquad s \in S,
+\end{equation}
+where $\lambda$ is some strictly positive function, and
+\begin{equation} \label{eq:expo-norm}
+   c(\theta) = \sum_{s \in S} e^{s \theta} \lambda(s).
+\end{equation}
+
+The natural parameter space of the family is the set $\Theta$ of $\theta$
+such that \eqref{eq:expo-norm} is finite.  Because $S$ is bounded below,
+if $c(\psi) < \infty$,
+then $c(\theta) < \infty$ for all $\theta < \psi$.  Thus $\Theta$ is either
+the whole real line or a semi-infinite interval extending to $- \infty$.
+
+For every $\theta$ in the interior of $\Theta$, the distribution with
+density $f_\theta$ has a moment generating function $M_\theta$ defined by
+$$
+   M_\theta(t) = E_\theta\{e^{t T(X)}\} = \frac{c(\theta + t)}{c(\theta)},
+$$
+and hence this distribution has moments of all orders, the mean and variance
+being given by derivatives at zero of the cumulant generating function
+$\log M_\theta$
+\begin{align*}
+   \mu(\theta) & = E_\theta\{T(X)\} = \frac{d}{d \theta} \log c(\theta)
+   \\
+   \sigma^2(\theta) & = \var_\theta\{T(X)\}
+   = \frac{d^2}{d \theta^2} \log c(\theta)
+\end{align*}
+Because of our assumption that $T(X)$ is not concentrated at one point,
+$\sigma^2(\theta) = d \mu(\theta) / d \theta$ can
+never be zero.  Hence $\mu$ is
+a strictly increasing continuous function that maps the interior of $\Theta$
+to some open interval of the real line.
+
+Write $L = \{ s_0, s_1 \}$ with $s_0 < s_1$.
+Since
+$$
+   \frac{f_\theta(s)}{f_\theta(s_0)}
+   = e^{(s - s_0) \theta} \frac{\lambda(s)}{\lambda(s_0)}
+$$
+the distribution clearly converges to the distribution concentrated at
+$s_0$ as $\theta \to - \infty$.
+
+Now
+$$
+   \frac{\mu(\theta) - s_0}{f_\theta(s_1)}
+   =
+   \sum_{s \in S \setminus \{s_0\}} (s - s_0) e^{(s - s_1) \theta}
+   \frac{\lambda(s)}{\lambda(s_1)}
+$$
+goes to $s_1 - s_0$ by monotone convergence as $\theta \to - \infty$.
+Hence $\mu(\theta) \to s_0$ as $\theta \to - \infty$.
+Thus $\mu$ is a diffeomorphism from the interior of $\Theta$ to some
+open interval of the real line, the lower endpoint of which is $s_0$.
+
+Now
+$$
+   \frac{\pr_\theta\{T(X) > s_1\}}{f_\theta(s_1)}
+   =
+   \sum_{s \in S \setminus L}
+   e^{(s - s_1) \theta} \frac{\lambda(s)}{\lambda(s_1)}
+$$
+goes to zero by monotone convergence as $\theta \to - \infty$.
+
+And these facts together imply
+\begin{equation} \label{eq:expo-gen}
+\begin{split}
+   \pr_\mu\{T(X) = s_0\} & = 1 - \frac{\mu - s_0}{s_1 - s_0} + o(\mu - s_0)
+   \\
+   \pr_\mu\{T(X) = s_1\} & = \frac{\mu - s_0}{s_1 - s_0} + o(\mu - s_0)
+   \\
+   \pr_\mu\{T(X) > s_1\} & = o(\mu - s_0)
+\end{split}
+\end{equation}
+where $\mu = \mu(\theta)$ is the mean value parameter.
+
+Now we claim that for small enough values of $\theta$ or $\mu$
+we have $C_1 = s_0$ and $C_2 = s_1$ and the UMPU test is given by
+equations (3.10a) and (3.10b) in the paper with $p_1$ and $p_2$
+given by (3.8a) in the paper and $p_{1 2} = m_{1 2} = 0$.  Let's check.
+These equations give now
+\begin{align*}
+   \gamma_1
+   & =
+   1 - \frac{(1 - \alpha) (s_1 - \mu)}{s_1 - \mu + o(\mu - s_0)}
+   \\
+   \gamma_2
+   & =
+   1 - \frac{(1 - \alpha) (\mu - s_0)}{\mu - s_0 + o(\mu - s_0)}
+\end{align*}
+and clearly both converge to $\alpha$ as $\mu \to s_0$ hence both are
+between zero and one for small enough $\theta$ or $\mu$ and hence
+define the UMPU test.
+\end{proof}
+
+This explains the behavior of the
+fuzzy confidence intervals for the binomial distribution for
+the two $x$ values nearest each boundary in Figure~2 of the paper.
+As $\theta \to 0$, the fuzzy confidence interval $1 - \phi(x, \alpha, \theta)$
+converges to $1 - \alpha$ for $x = 0$ or $x = 1$ and converges to zero
+for all other $x$.
+And as $\theta \to 1$, the fuzzy confidence interval
+converges to $1 - \alpha$ for $x = n - 1$ or $x = n$ and converges to zero
+for all other $x$.
+
+\subsection{Models With Nuisance Parameters}
+
+UMP and UMPU theory extends to multiparameter exponential families
+when the parameter of interest $\theta$ is one of the canonical parameters
+(Lehmann, TSH, 1st ed.,\ pp.\ 134--136).
+
+Suppose the family has densities of the form
+$$
+   \frac{1}{c(\theta, \boldsymbol{\eta})}
+   \exp\left( \theta T(x) + \sum_{i = 1}^k \eta_i U_i(x) \right)
+$$
+with respect to some measure on the sample space.  Then the situation
+is exactly the same as described above except that the reference distribution
+of the test is the conditional distribution of $T(X)$ given $\mathbf{U}(X)$,
+which (a standard fact about exponential families) depends only on $\theta$
+and not on the nuisance parameter $\boldsymbol{\eta}$.
+
+\subsubsection{UMP Tests With Nuisance Parameters}
+
+Now there exists a UMP test
+having null hypothesis $H_0 = \set{ \vartheta : \vartheta \le \theta }$,
+alternative hypothesis $H_1 = \set{ \vartheta : \vartheta > \theta }$,
+and significance level $\alpha$,
+and its critical function $\phi$ is defined by
+\begin{equation} \label{eq:crit-lower}
+\begin{split}
+   \phi(x, \alpha, \theta)
+   =
+   \begin{cases}
+   1, & T(x) > C[\mathbf{U}(x)]
+   \\
+   \gamma[\mathbf{U}(x)], & T(x) = C[\mathbf{U}(x)]
+   \\
+   0, & T(x) < C[\mathbf{U}(x)]
+   \end{cases}
+\end{split}
+\end{equation}
+where the functions $\gamma$ and $C$ are determined by
+\begin{equation} \label{eq:cond-lower}
+   E_\theta\{\phi(X, \alpha, \theta) \mid \mathbf{U}(X) \} = \alpha.
+\end{equation}
+
+Everything is exactly the same as for the one-parameter case except
+for the conditioning on $\mathbf{U}(x)$.  The only point of the discussion
+is that the test is UMP whether considered conditionally or unconditionally.
+
+As before, the UMP upper-tailed test is obtained by reversing all the
+inequalities above.
+
+\subsubsection{UMPU Tests With Nuisance Parameters}
+
+Now there exists a UMPU test
+having null hypothesis $H_0 = \set{ \vartheta : \vartheta = \theta }$,
+alternative hypothesis $H_1 = \set{ \vartheta : \vartheta \neq \theta }$,
+and significance level $\alpha$,
+and its critical function $\phi$ is defined by
+\begin{equation} \label{eq:crit-two}
+\begin{split}
+   \phi(x, \alpha, \theta)
+   =
+   \begin{cases}
+   1, & T(x) < C_1[\mathbf{U}(x)]
+   \\
+   \gamma_1[\mathbf{U}(x)], & T(x) = C_1[\mathbf{U}(x)]
+   \\
+   0, & C_1[\mathbf{U}(x)] < T(x) < C_2[\mathbf{U}(x)]
+   \\
+   \gamma_2[\mathbf{U}(x)], & T(x) = C_2[\mathbf{U}(x)]
+   \\
+   1, & C_2[\mathbf{U}(x)] < T(x)
+   \end{cases}
+\end{split}
+\end{equation}
+where the functions $\gamma_1$, $\gamma_2$, $C_1$, and $C_2$ are determined by
+\begin{subequations}
+\begin{align}
+   E_\theta\{\phi(X, \alpha, \theta) \mid \mathbf{U}(X) \} & = \alpha
+   \label{eq:cond-two-a}
+   \\
+   E_\theta\{T(X) \phi(X, \alpha, \theta) \mid \mathbf{U}(X) \} & = \alpha
+   E_\theta\{T(X) \mid \mathbf{U}(X) \}
+   \label{eq:cond-two-b}
+\end{align}
+\end{subequations}
+
+Again, the point
+is that the test is UMPU whether considered conditionally or unconditionally.
+
+% As we saw in Section~\ref{sec:special}, it is possible that $C_1 = C_2$
+% in which case $\gamma_1$ and $\gamma_2$ are not separately determinable,
+% only their sum.  Analysis of that situation here would just repeat that
+% section word for word except for references to conditioning on $\mathbf{U}(x)$.
+
+\section{Models}
+
+\subsection{Binomial}
+
+Let $X \sim \BinomialDis(n, p)$ with $0 < p < 1$.
+
+All of the quantities in \eqref{eq:gamma-1} and \eqref{eq:gamma-2}
+are easily calculated (in R) except possibly $m_{1 2}$.  Actually,
+as Lehmann points out (TSH, 1st, ed.,\ pp.~128--129), this quantity
+is also easy to calculate
+$$
+   \sum_{x = C_1 + 1}^{C_2 - 1} x \binom{n}{x} p^x (1 - p)^{n - x}
+   =
+   n p \sum_{x = C_1 + 1}^{C_2 - 1} \binom{n - 1}{x - 1}
+   p^{x - 1} (1 - p)^{(n - 1) - (x - 1)}
+$$
+and the sum on the right is just a binomial probability for the
+$\BinomialDis(n - 1, p)$ distribution, that is, the right side can be calculated
+in R (with the obvious definitions of the variables) by
+\begin{verbatim}
+n * p * (pbinom(c2 - 2, n - 1, p) - pbinom(c1 - 1, n - 1, p))
+\end{verbatim}
+assuming \texttt{pbinom(c1 - 1, n - 1, p)} does not crash and
+produces zero when \texttt{c1} is zero (which it
+does in recent versions I can check).
+
+\subsection{Poisson}
+
+Let $X \sim \PoissonDis(\mu)$ with $0 < \mu$.
+
+Again, all of the quantities in \eqref{eq:gamma-1} and \eqref{eq:gamma-2}
+are easily calculated except possibly $m_{1 2}$.  Does it work like the
+binomial case?  Yes!
+$$
+   \sum_{x = C_1 + 1}^{C_2 - 1} x \frac{\mu^x}{x !} e^{- \mu}
+   =
+   \mu \sum_{x = C_1 + 1}^{C_2 - 1} \frac{\mu^{x - 1}}{(x - 1)!} e^{- \mu}
+$$
+and the sum on the right is just another Poisson probability,
+that is, the right side can be calculated
+in R (with the obvious definitions of the variables) by
+\begin{verbatim}
+mu * (ppois(c2 - 2, mu) - ppois(c1 - 1, mu))
+\end{verbatim}
+
+\subsection{Negative Binomial} \label{sec:negbin}
+
+Let $X \sim \NegativeBinomialDis(r, p)$ with $0 < p < 1$.  Like R we consider
+the sample space to start at zero rather than $r$.  This also allows for
+non-integer $r$.  The densities of the family have the form
+$$
+   f(x) = \frac{\Gamma(x+r)}{\Gamma(r) x!} p^r (1-p)^x
+$$
+
+Note that if we are to have an exponential family $r$ cannot be an unknown
+parameter!  The only unknown parameter is $p$.
+
+Again, all of the quantities in \eqref{eq:gamma-1} and \eqref{eq:gamma-2}
+are easily calculated except possibly $m_{1 2}$.  Does it work like the
+binomial case?  Yes!
+$$
+   \sum_{x = C_1 + 1}^{C_2 - 1} x \frac{\Gamma(x+r)}{\Gamma(r) x!} p^r (1-p)^x
+   =
+   \frac{1 - p}{p} \sum_{x = C_1 + 1}^{C_2 - 1}
+   \frac{\Gamma(x - 1 + r + 1)}{\Gamma(r) (x - 1)!} p^{r + 1} (1-p)^{x - 1}
+$$
+and the sum on the right is just another negative binomial probability,
+that is, the right side can be calculated
+in R (with the obvious definitions of the variables) by
+\begin{verbatim}
+(1 - p) / p * (pnbinom(c2 - 2, r + 1, p)
+    - pnbinom(c1 - 1, r + 1, p))
+\end{verbatim}
+
+\subsection{Two Independent Poisson Random Variables}
+
+Let $X_i \sim \PoissonDis(\mu_i)$ with $0 < \mu_i$, for $i = 1$, $2$
+be independent random variables.  We wish to compare the means $\mu_1$ and
+$\mu_2$.  We cannot just test or produce fuzzy confidence intervals for
+a function pulled out of the air, such as $\mu_1 - \mu_2$.  The parameter
+we test must be canonical.
+
+The canonical statistics of this exponential family are $X_1$ and $X_2$
+and the corresponding canonical parameters are $\psi_i = \log(\mu_i)$.
+Linear functions of canonical parameters are again canonical so we can test
+or produce fuzzy confidence intervals
+for $\psi_1 - \psi_2 = \log(\mu_1 / \mu_2)$.
+
+Introduce new parameters
+\begin{align*}
+   \psi_1 & = \eta + \theta
+   \\
+   \psi_2 & = \eta
+\end{align*}
+Then
+$$
+   X_1 \psi_1 + X_2 \psi_2
+   =
+   X_1 \theta + (X_1 + X_2) \eta
+   =
+   T(\mathbf{X}) \theta + U(\mathbf{X}) \eta
+$$
+Where
+\begin{equation} \label{eq:t-and-u}
+\begin{split}
+   T(\mathbf{X}) & = X_1
+   \\
+   U(\mathbf{X}) & = X_1 + X_2
+\end{split}
+\end{equation}
+
+It is a standard result that the conditional distribution of
+$T(\mathbf{X})$ given $U(\mathbf{X})$ is
+$$
+   X_1 \mid X_1 + X_2
+   \sim
+   \BinomialDis\left(X_1 + X_2, \frac{\mu_1}{\mu_1 + \mu_2}\right)
+$$
+So the theory says we do the UMP or UMPU test based on this distribution
+with $\mu_1 / (\mu_1 + \mu_2)$ as the parameter of interest
+(Lehmann, TSH, 1st ed., pp.~140--142, gives further details).
+
+\subsection{Two Independent Binomial Proportions} \label{sec:two-binom-indep}
+
+Let $X_i \sim \BinomialDis(n_i, p_i)$ with $0 < p_i < 1$, for $i = 1$, $2$
+be independent random variables.  We wish to compare the proportions $p_1$ and
+$p_2$.  We cannot just test or produce fuzzy confidence intervals for
+a function pulled out of the air, such as $p_1 - p_2$.  The parameter
+we test must be canonical.
+
+The canonical statistics of this exponential family are $X_1$ and $X_2$
+and the corresponding canonical parameters are $\psi_i = \logit(p_i)$.
+Linear functions of canonical parameters are again canonical so we can test
+or produce fuzzy confidence intervals for $\psi_1 - \psi_2$.
+
+As in the Poisson case we see that we can base the test on the conditional
+distribution of $T(\mathbf{X})$ given $U(\mathbf{X})$, where these variables
+are defined by \eqref{eq:t-and-u}.
+This distribution is known although is is not ``nice'' and is
+not a ``brand name'' distribution.
+It is (Lehmann, TSH, 1st ed., pp.~142--143) the exponential family generated
+by the hypergeometric distribution.
+\begin{equation} \label{eq:hypergeo}
+   \pr\{ X_1 = t \mid X_1 + X_2 = u \}
+   =
+   \frac{1}{c(\rho)} \binom{n_1}{t} \binom{n_2}{u - t} \rho^t,
+   \qquad t = 0, \ldots, u,
+\end{equation}
+where
+$$
+   \rho = \frac{p_1 (1 - p_2)}{(1 - p_1) p_2}
+$$
+and
+$$
+   c(\rho)
+   =
+   \sum_{t = 0}^u \binom{n_1}{t} \binom{n_2}{u - t} \rho^t.
+$$
+So the theory says we do the UMP or UMPU test based on this distribution
+with $\rho$ as the parameter of interest
+
+This distribution is very hairy.  For starters the actual range of the
+random variable $X_1 \mid X_1 + X_2$ is not 0 to $X_1 + X_2$ as
+\eqref{eq:hypergeo} seems to indicate.  The binomial coefficients can
+evaluate to zero.
+
+We will leave the complexity of this model and move on to other models.
+In principle it is just a one-parameter exponential family and hence ``nice''
+in certain respects.  In practice, there is no readily available software
+to calculate distribution and density functions, so this model requires
+more effort in computer implementation.
+
+\subsection{Two Independent Negative Binomial Variables}
+
+Let $X_i \sim \NegativeBinomialDis(r_i, p_i)$ with $0 < r_i$ and
+$0 < p_i < 1$, for $i = 1$, $2$ be independent random variables.
+As in Section~\ref{sec:negbin} we are using the convention that the
+sample space starts at zero.  We wish to compare the proportions $p_1$ and
+$p_2$.  We cannot just test or produce fuzzy confidence intervals for
+a function pulled out of the air, such as $p_1 - p_2$.  The parameter
+we test must be canonical.
+
+The canonical statistics of this exponential family are $X_1$ and $X_2$
+and the corresponding canonical parameters are $\psi_i = \log(1 - p_i)$.
+Linear functions of canonical parameters are again canonical so we can test
+or produce fuzzy confidence intervals for $\psi_1 - \psi_2$.
+
+As in the Poisson case we see that we can base the test on the conditional
+distribution of $T(\mathbf{X})$ given $U(\mathbf{X})$, where these variables
+are defined by \eqref{eq:t-and-u}.
+This distribution is not fully explained in Lehmann, although
+the $r_1 = r_2 = 1$ case is the subject of a homework problem in the
+second edition.
+
+Let's see what happens.  The joint distribution of the $X$'s is
+\begin{align}
+   f(x_1, x_2)
+   & =
+   \prod_{i = 1}^2
+   \frac{\Gamma(x_i + r_i)}{\Gamma(r_i) x_i!} p_i^{r_i} (1 - p_i)^{x_i}
+   \nonumber
+   \\
+   & =
+   \exp(x_1 \psi_1 + x_2 \psi_2)
+   \prod_{i = 1}^2
+   \frac{\Gamma(x_i + r_i)}{\Gamma(r_i) x_i!} p_i^{r_i}
+   \nonumber
+   \\
+   & =
+   \exp(t \theta + u \eta)
+   \frac{\Gamma(t + r_1)}{\Gamma(r_1) t!}
+   \frac{\Gamma(u - t + r_2)}{\Gamma(r_2) (u - t)!}
+   p_1^{r_1} p_2^{r_2}
+   \label{eq:unnormal}
+\end{align}
+where
+\begin{align*}
+   t & = x_1
+   \\
+   u & = x_1 + x_2
+   \\
+   \theta & = \psi_1 - \psi_2
+   \\
+   \eta & = \psi_2
+\end{align*}
+It matters not that we have not specified $p_1$ and $p_2$ as a function
+of $\theta$ and $\eta$.  We want to consider the conditional distribution
+anyway.  Thought of as a function of $t$ for fixed $u$ and dropping all terms
+that do not contain both parameters and $t$ we get
+\begin{equation} \label{eq:neg-hyper-expo}
+   f_\theta(t \mid u)
+   =
+   \frac{1}{c(\theta)}
+   \exp(t \theta)
+   \frac{\Gamma(t + r_1) \Gamma(u - t + r_2)}{t! (u - t)!},
+   \qquad t = 0, \ldots, u,
+\end{equation}
+where
+$$
+   c(\theta)
+   =
+   \sum_{t = 0}^u
+   \exp(t \theta)
+   \frac{\Gamma(t + r_1) \Gamma(u - t + r_2)}{t! (u - t)!}.
+$$
+Hmmmm.  Also not a brand name family and not the exponential family generated
+by the hypergeometric distribution we saw in the case of two independent
+binomial proportions.  Still just another one-parameter exponential family.
+No big deal.
+
+Actually, Mathematica says this has some sort of relation to hypergeometric
+functions, for example
+\begin{verbatim}
+In[4]:= Sum[ rho^t Gamma[t + r] Gamma[u - t + s] /
+        (Gamma[t + 1] Gamma[u - t + 1]), {t, 0, u} ]
+
+        Gamma[r] Gamma[s + u] Hypergeometric2F1[r, -u, 1 - s - u, rho]
+Out[4]= --------------------------------------------------------------
+                                 Gamma[1 + u]
+\end{verbatim}
+So Mathematica knows how to calculate the normalizing function and it
+involves a ``hypergeometric $\vphantom{F}_2 F_1$ function.  Maybe we
+should call this the exponential family generated by the negative
+hypergeometric distribution.
+
+According to
+\begin{verbatim}
+http://planetmath.org/encyclopedia/NegativeHypergeometricDistribution.html
+\end{verbatim}
+there is a \emph{negative hypergeometric distribution} having density
+$$
+   f(x) =
+   \frac{ \binom{x+b-1}{x} \binom{W+B-b-x}{W-x} }{ \binom{W+B}{W} },
+   \qquad x = 0, 1, \ldots, W,
+$$
+where $W$, $B$, and $b$ are positive integers.  The web page explains
+that this is the distribution of the number of ``special items'' $X$
+(from $W$ special items in the population) present before the $b$th
+object from a population with $B$ items altogether.
+
+Comparing with \eqref{eq:neg-hyper-expo} we see that the base measure
+of the family does indeed have this form when $r_1$ and $r_2$ are integers.
+
+\subsection{Testing Independence in a Two-by-two Table} \label{sec:exact}
+
+This is the UMP/UMPU competitor for Fisher's exact test.  The data consist
+of a matrix $X_{i j}$, $i = 1$, 2, $j = 1$, 2, that has a multinomial
+distribution with sample size $n$ and cell probability matrix $p_{i j}$,
+$i = 1$, 2, $j = 1$, 2.  This is also called a two-by-two contingency table.
+
+The canonical statistics are the $X_{i j}$, but the canonical parameters are
+not uniquely defined in terms of the $p_{i j}$ because the model is really
+only three dimensional, not four, because the $X_{i j}$ sum to $n$.
+
+As is well known, this is a three-dimensional exponential family, the
+canonical statistics being any three of the four $X_{i j}$, the fourth
+being determined from the other three by the requirement that the $X_{i j}$
+sum to $n$.
+
+In this problem (Lehmann, TSH, 1st ed., pp.~143--146) the marginals
+are the statistics for the nuisance parameters,
+and we can consider any other statistic
+linearly independent of the marginals and the sum of all cells as the
+statistic of interest.  Lehmann chooses
+\begin{equation} \label{eq:exact}
+\begin{split}
+   T(\mathbf{X}) & = X_{1 1}
+   \\
+   U_1(\mathbf{X}) & = X_{1 1} + X_{1 2}
+   \\
+   U_2(\mathbf{X}) & = X_{1 1} + X_{2 1}
+\end{split}
+\end{equation}
+
+The conditional distribution of $T(\mathbf{X})$ given the marginals
+$U_1(\mathbf{X})$ and $U_2(\mathbf{X})$ is well known.  It is the
+hypergeometric distribution involved in Fisher's exact test under the
+null hypothesis of independence and under general null hypotheses is
+the exponential family generated by the hypergeometric we encountered
+in Section~\ref{sec:two-binom-indep}.
+\begin{multline} \label{eq:hyper-fish}
+   Pr\{X_{1 1} = t \mid X_{1 1} + X_{1 2} = u_1, X_{1 1} + X_{2 1} = u_2\}
+   \\
+   =
+   \frac{1}{c(\rho)} \binom{u_1}{t} \binom{n}{u_2 - t} \rho^t,
+   \qquad t = 0, \ldots, n
+\end{multline}
+where
+$$
+   \rho = \frac{p_{1 1} p_{2 2}}{p_{1 2} p_{2 1}}
+$$
+and
+$$
+   c(\rho) = \sum_{t = 0}^n \binom{u_1}{t} \binom{n}{u_2 - t} \rho^t.
+$$
+As in Section~\ref{sec:two-binom-indep} we note that this distribution
+given by \eqref{eq:hyper-fish} often does not have the full range 0 to $n$
+because the binomial coefficients may be zero.
+
+\subsection{Different Answers to the Same Question in a Poll}
+
+This section and the next give the UMP/UMPU/fuzzy competitors to the
+analysis of correlated binomial proportions in Wild and Seber
+(pp.~343--350).  The first considers different answers to the same
+question on a poll.  This is a multinomial problem.  Say the categories
+of interest have counts $X_1$ and $X_2$, then we know
+$$
+   X_1 \mid X_1 + X_2
+   \sim
+   \BinomialDis\left(X_1 + X_2, \frac{p_1}{p_1 + p_2}\right)
+$$
+and so the UMP/UMPU/fuzzy procedures are based on this distribution.
+
+\subsection{Answers to Different Questions in a Poll}
+
+Here again, like in Section~\ref{sec:exact}, we have a two-by-two table
+with data $X_{i j}$ and cell probabilities $p_{i j}$ but the question of
+interest is different.  Now we are interested in just the opposite question,
+whether the marginals differ.  This in a sense (a rather vague sense)
+interchanges the role of interest and nuisance parameters, what were interest
+parameters in Section~\ref{sec:exact} are now nuisance parameters and vice
+versa.
+
+Ordinarily, this would be nonsense.  There is exactly one interest parameter.
+The rest (in this case two) must be nuisance parameters.  So,
+strictly speaking, they cannot be interchanged.  But a two-by-two table has
+a redundant canonical statistic: there are four $X_{i j}$ but they sum to $n$
+so only three are linearly independent.  So if we add the redundant statistic
+to the statistics corresponding to parameters of interest we two sets of two
+that can be interchanged.
+
+It is clear that \eqref{eq:exact} could have been written with subscripts
+1 and 2 interchanged, which would make $X_{2 2}$ the statistic of interest.
+This tells us that here we should condition on $X_{1 1}$ and $X_{2 2}$
+leaving either $X_{1 2}$ or $X_{2 1}$ as the statistic of interest.
+Thus in this case the UMP/UMPU/fuzzy procedure is based on the distribution
+$$
+   X_{1 2} \mid X_{1 1}, X_{2 2}
+   \sim
+   \BinomialDis\left(n - X_{1 1} - X_{2 2}, \frac{p_{1 2}}{p_{1 2} + p_{2 1}}
+   \right)
+$$
+
+And in hindsight we see that we have invented the conditional, exact,
+uniformly most whatever (UMW) competitor of McNemar's test (Lindgren,
+\emph{Statistical Theory}, pp.~381--383).
+
+\section{Algorithms}
+
+\subsection{Version 0.1}
+
+After a great struggle, a very simple algorithm was decided on for
+calculating $\phi(x, \alpha, \theta)$.  Given $\alpha$ and $\theta$,
+calculate the appropriate $c_1$, $c_2$, $\gamma_1$, and $\gamma_2$
+as follows.
+
+First handle the special cases where $\alpha$ is zero or one
+and $\theta$ is on the boundary of the parameter space, using
+Theorem~\ref{th:umpu-end} above and the obvious fact that $\phi$ is
+identically equal to one when $\alpha = 1$ and identically equal to zero
+when $\alpha = 0$.
+
+When in the general case $0 < \alpha < 1$ and $\theta$ not on the boundary
+choose some $c_1$ and $c_2$ such that $c_1 \le E_\theta\{T(X)\} \le c_2$.
+We pick the $c_1$ and $c_2$ that give, with randomization, an equal tailed
+test, in the hope that this is close to correct.
+
+Then we go into an infinite loop that does the following.
+\begin{itemize}
+\item Calculate $\gamma_1$ and $\gamma_2$ using the current guesses
+for $c_1$ and $c_2$ and equations \eqref{eq:gamma-1} and \eqref{eq:gamma-2}
+above.  If the results satisfy 
+$0 \le \gamma_1 \le 1$ and $0 \le \gamma_2 \le 1$, then we are done
+and stop the loop.
+\item Otherwise, we change $c_1$ or $c_2$, the one corresponding to the
+$\gamma_i$ that violates the constraints worst.  If this $\gamma_i$ is
+negative, we move the $c_i$ out by one
+(i.~e.\ decrease $c_1$ or increase $c_2$)
+and if this $\gamma_i$ is greater than one, we move the $c_i$ in by one.
+\end{itemize}
+Actually we don't do an infinite loop, because we have no theorem that
+says this algorithm converges, so we have a maximum iteration count
+(default 10) and just give up when it is reached.  In the examples
+we have done, there has been no need to increase the iteration count.
+
+See \path{ump/src/umpubinom.c} for an example of this algorithm.
+See \path{ump/tests/umpub.R} for the tests it passed.
+
+\subsection{Version 0.3}
+
+An attempt to implement the density of abstract randomized $P$-values
+and test the implementation shows that
+equations \eqref{eq:gamma-1} and \eqref{eq:gamma-2} are no good.
+The exhibit catastrophic cancellation for small alpha.
+
+So we back up to \eqref{eq:pi}, \eqref{eq:p12}, and \eqref{eq:m12}
+and keep \eqref{eq:pi} but ignore the other two, replacing them with
+\begin{subequations}
+\begin{align}
+   P_1 & = \pr_\theta\{ T(X) < C_1 \}
+   \label{eq:P1}
+   \\
+   P_2 & = \pr_\theta\{ T(X) > C_2 \}
+   \label{eq:P2}
+   \\
+   M_1 & = E_\theta\{ T(X) I_{(- \infty, C_1)}[T(X)] \}
+   \label{eq:M1}
+   \\
+   M_2 & = E_\theta\{ T(X) I_{(C_2, \infty)}[T(X)] \}
+   \label{eq:M2}
+\end{align}
+\end{subequations}
+Then we replace \eqref{eq:umpu-a-general} and \eqref{eq:umpu-b-general} by
+\begin{subequations}
+\begin{align}
+   P_1 + \gamma_1 p_1 + \gamma_2 p_2 + P_2
+   & = \alpha
+   \label{eq:umpu-a-general-too}
+   \\
+   M_1 +  \gamma_1 C_1 p_1 + \gamma_2 C_2 p_2 + M_2
+   & = \alpha \mu
+   \label{eq:umpu-b-general-too}
+\end{align}
+\end{subequations}
+which solved for $\gamma_1$ and $\gamma_2$ give
+\begin{subequations}
+\begin{align}
+   \gamma_1
+   & =
+   \frac{\alpha (C_2 - \mu) + (M_1 - C_2 P_1) + (M_2 - C_2 P_2)}
+   {p_1 (C_2 - C_1)}
+   \label{eq:gamma-1-too}
+   \\
+   \gamma_2
+   & =
+   \frac{\alpha (\mu - C_1) - (M_1 - C_1 P_1) - (M_2 - C_1 P_2)}
+   {p_2 (C_2 - C_1)}
+   \label{eq:gamma-2-too}
+\end{align}
+\end{subequations}
+%
+% Solve[ { P1 + gamma1 p1 + gamma2 p2 + P2 == alpha,
+%     M1 + gamma1 C1 p1 + gamma2 C2 p2 + M2 == mu alpha }, { gamma1, gamma2 } ]
+%
+% gamma1 = (alpha (C2 - mu) + (M1 - C2 P1) + (M2 - C2 P2)) / (p1 (C2 - C1))
+% gamma2 = (alpha (mu - C1) - (M1 - C1 P1) - (M2 - C1 P2)) / (p2 (C2 - C1))
+%
+% P1 + gamma1 p1 + gamma2 p2 + P2
+% M1 + gamma1 C1 p1 + gamma2 C2 p2 + M2
+%
+% Solve[ 1 == (alpha (C2 - mu) + (M1 - C2 P1) + (M2 - C2 P2)) / (p1 (C2 - C1)),
+%     alpha ]
+% Solve[ 1 == (alpha (mu - C1) - (M1 - C1 P1) - (M2 - C1 P2)) / (p2 (C2 - C1)),
+%     alpha ]
+% Solve[ 0 == (alpha (C2 - mu) + (M1 - C2 P1) + (M2 - C2 P2)) / (p1 (C2 - C1)),
+%     alpha ]
+% Solve[ 0 == (alpha (mu - C1) - (M1 - C1 P1) - (M2 - C1 P2)) / (p2 (C2 - C1)),
+%     alpha ]
+%
+
+This seems to work better, but honesty compels us to admit that this formula
+also is subject to catastrophic cancellation.  Perusal of the source code
+reveals several ad hoc bits of code that deal with special cases
+in which the code without the adhockery fails due to catastrophic cancellation
+or other problems with the inexactitude of floating point arithmetic.
+
+It is fair to say that our code is far from an elegant and provably correct
+solution to this problem.  We think the algorithm presented
+on page~\pageref{pg:algo} would actually be better than the one we used
+in all respects except that it takes time proportional to the sample size,
+which was deemed unacceptable (perhaps wrongly).
+
+
+
+
+
+\bibliographystyle{apalike}
+
+\begin{thebibliography}{}
+
+\bibitem[Lehmann, 1959]{lehmann}
+\textsc{Lehmann, E.~L.} (1959).
+\newblock \emph{Testing Statistical Hypotheses}.
+\newblock Wiley, New York.
+\newblock (2nd ed., Wiley, 1986; Springer, 1997).
+
+\end{thebibliography}
+
+\end{document}
+
+
+
+
+\section{Computing}
+
+\subsection{Nice Models}
+
+In this section we take another shot at ``nice models'' by which we mean
+those for which R has functions for calculating most things about the
+distribution.  Of the models mentioned above, the nice models are the
+binomial, Poisson, and negative binomial.  The exponential families
+generated by the hypergeometric and negative hypergeometric distributions
+are not ``nice.''
+
+Let $F_\theta$ and $F_\theta^{-1}$ denote the cumulative distribution
+and quantile functions as implemented in R (for example, \texttt{pbinom}
+and \texttt{qbinom})
+$$
+   F_\theta^{-1}(p) = \inf \set{ x : F_\theta(x) \ge p }
+$$
+Define also an analogous ``$M$'' function for the mean
+$$
+   M_\theta(x) = \sum_{y = 0}^x y f_\theta(y)
+$$
+and its inverse
+$$
+   M_\theta^{-1}(s) = \inf \set{ x : M_\theta(x) \ge s }
+$$
+As discussed in the sections on the models, these ``$M$'' functions are
+implemented in R as follows
+\begin{verbatim}
+mbinom <- function(x, n, p)
+    n * p * pbinom(x - 1, n - 1, p)
+mpois <- function(x, mu)
+    mu * ppois(x - 1, mu)
+mnbinom <- function(x, r, p)
+    (1 - p) / p * pnbinom(x - 1, r + 1, p)
+\end{verbatim}
+The corresponding inverse functions are
+\begin{verbatim}
+nbinom <- function(s, n, p)
+    1 + qbinom(s / (n * p), n - 1, p)
+npois <- function(s, mu)
+    1 + qpois(s / mu, mu)
+nnbinom <- function(s, r, p)
+    1 + qnbinom(s * p / (1 - p), r + 1, p)
+\end{verbatim}
+
+Then we can rewrite write the key
+equations \eqref{eq:gamma-1} and \eqref{eq:gamma-2} as
+\begin{align*}
+   1 - \gamma_1
+   & =
+   \frac{(1 - \alpha) (C_2 - \mu) + m_{1 2} - C_2 p_{1 2}}
+   {f_\theta(C_1) (C_2 - C_1)}
+   \\
+   1 - \gamma_2
+   & =
+   \frac{(1 - \alpha) (\mu - C_1) - m_{1 2} + C_1 p_{1 2}}
+   {f_\theta(C_2) (C_2 - C_1)}
+\end{align*}
+where
+\begin{align*}
+   p_{1 2} & = F_\theta(C_2 - 1) - F_\theta(C_1)
+   \\
+   m_{1 2} & = M_\theta(C_2 - 1) - M_\theta(C_1)
+\end{align*}
+In order to have the gammas in range we need to satisfy the inequalities
+\begin{align*}
+   0
+   & \le
+   \frac{(1 - \alpha) (C_2 - \mu) + m_{1 2} - C_2 p_{1 2}}
+   {f_\theta(C_1) (C_2 - C_1)}
+   \le
+   1
+   \\
+   0
+   & \le
+   \frac{(1 - \alpha) (\mu - C_1) - m_{1 2} + C_1 p_{1 2}}
+   {f_\theta(C_2) (C_2 - C_1)}
+   \le
+   1
+\end{align*}
+or
+\begin{gather*}
+   0
+   \le
+   (1 - \alpha) (C_2 - \mu) + m_{1 2} - C_2 p_{1 2}
+   \le
+   f_\theta(C_1) (C_2 - C_1)
+   \\
+   0
+   \le
+   (1 - \alpha) (\mu - C_1) - m_{1 2} + C_1 p_{1 2}
+   \le
+   f_\theta(C_2) (C_2 - C_1)
+\end{gather*}
+Adding these inequalities to eliminate $m_{1 2}$ gives
+$$
+   0 \le (1 - \alpha - p_{1 2}) (C_2 - C_1)
+   \le \bigl[ f_\theta(C_1) + f_\theta(C_2) \bigr] (C_2 - C_1)
+$$
+or
+$$
+   0 \le 1 - \alpha - F_\theta(C_2 - 1) + F_\theta(C_1)
+   \le f_\theta(C_1) + f_\theta(C_2)
+$$
+or
+\pagebreak[3]
+\begin{subequations}
+\begin{equation} \label{eq:fred-a}
+   F_\theta(C_2 - 1) - F_\theta(C_1)
+   \le
+   1 - \alpha
+   \le
+   F_\theta(C_2) - F_\theta(C_1 - 1)
+\end{equation}
+Similarly, eliminating $p_{1 2}$ gives
+\begin{equation} \label{eq:fred-b}
+   M_\theta(C_2 - 1) - M_\theta(C_1)
+   \le
+   (1 - \alpha) \mu
+   \le
+   M_\theta(C_2) - M_\theta(C_1 - 1)
+\end{equation}
+\end{subequations}
+Note that in hindsight \eqref{eq:fred-a} and \eqref{eq:fred-b} are obvious.
+
+In order to satisfy \eqref{eq:fred-a} and \eqref{eq:fred-b} we must have
+$$
+   F_\theta^{-1}\bigl\{ F_\theta(C_1 - 1) + 1 - \alpha \bigr\}
+   \le
+   C_2
+   \le
+   1 + F_\theta^{-1}\bigl\{ F_\theta(C_1) + 1 - \alpha + \epsilon \bigr\},
+   \qquad \forall \epsilon > 0
+$$
+and
+$$
+   M_\theta^{-1}\bigl\{ M_\theta(C_1 - 1) + (1 - \alpha) \mu \bigr\}
+   \le
+   C_2
+   \le
+   1 + M_\theta^{-1}\bigl\{ M_\theta(C_1) + (1 - \alpha) \mu + \epsilon \bigr\},
+   \qquad \forall \epsilon > 0
+$$
+the $\forall \epsilon > 0$ being an unavoidable hassle caused by the
+interaction of discreteness and the right continuity convention.
+It's too bad the R ``q'' functions don't come with a flag
+for either right or left continuity.
+Basically, these are just \eqref{eq:fred-a} and \eqref{eq:fred-b} ``inverted''
+which is what we need to use in the computer, but we will stick with the
+simpler \eqref{eq:fred-a} and \eqref{eq:fred-b} for analysis.
+
+Now suppose we are interested in one fixed $x$ and $\theta$.  Suppose,
+for concreteness that $x < \mu$ so if $\phi(x, \alpha, \theta)$ is
+strictly between zero and one we must have $x = C_1$.  Then our inequalities
+can be used to determine the range of $\alpha$ and $C_2$ for which we
+get solutions.
+
+For starters, we must have $\mu < C_2 \le x_{\text{max}}$, where 
+$x_{\text{max}}$ is the upper bound of the support (perhaps $\infty$).
+And this implies from \eqref{eq:fred-a} that
+$$
+   F_\theta(C_1 - 1) \le \alpha \le 1 - F_\theta(\mu) + F_\theta(C_1)
+$$
+and from \eqref{eq:fred-b} that
+$$
+   \frac{M_\theta(C_1 - 1)}{\mu}
+   \le
+   \alpha
+   \le
+   1 - \frac{M_\theta(\mu) - M_\theta(C_1)}{\mu}
+$$
+
+\section{New Computing}
+
+In this section (November, 2002) we look at the analog of following
+the curve $\theta \mapsto \phi(x, \alpha, \theta)$ to get
+the membership function of a fuzzy confidence interval, the same
+way we followed $\alpha \mapsto \phi(x, \alpha, \theta)$ to get the
+cumulative distribution function of a fuzzy $P$-value.
+The latter is piecewise linear.  The former isn't.  But how hard is it?
+
+We know how to get started from the ``endpoint'' analysis
+(Section~\ref{sec:endpoint}).  The membership function of the fuzzy
+confidence interval goes to $1 - \alpha$ or to 0 as $\theta$ goes to
+its upper or lower limit, depending on the value of $x$.
+(This means we are still in ``nice'' models, one-parameter exponential
+families with canonical statistic taking values on a range of consecutive
+integers).
+
+So we can start at the edge of the parameter space and go from there.
+What do equations \eqref{eq:gamma-1} and \eqref{eq:gamma-2} do
+\emph{considered as functions of $\theta$ for fixed $\alpha$}?
+
+Let's start with the case of $\theta$ near the boundary.  Suppose
+the sample space of the canonical statistic is $\{ 0, 1, \ldots \}$
+(so we are in the situation
+analyzed in Section~\ref{sec:endpoint}, but we want to know more than
+just $o(\mu)$ used there.  For small enough $\theta$ we do have $C_1 = 0$
+and $C_2 = 1$ so $p_{1 2} = m_{1 2} = 0$ and
+equations \eqref{eq:gamma-1} and \eqref{eq:gamma-2} become
+\begin{subequations}
+\begin{align}
+   1 - \gamma_1
+   & =
+   \frac{(1 - \alpha) (1 - E_\theta\{T(X)\})}{\pr_\theta\{T(X) = 0\}}
+   \label{eq:gamma-1-mbogo}
+   \\
+   1 - \gamma_2
+   & =
+   \frac{(1 - \alpha) E_\theta\{T(X)\}}{\pr_\theta\{T(X) = 1\}}
+   \label{eq:gamma-2-mbogo}
+\end{align}
+\end{subequations}
+
+For the $\text{Binomial}(n, p)$ distribution these become
+\begin{subequations}
+\begin{align}
+   1 - \gamma_1
+   & =
+   \frac{(1 - \alpha) (1 - n p)}{(1 - p)^n}
+   \label{eq:gamma-1-mbogo-bino}
+   \\
+   1 - \gamma_2
+   & =
+   \frac{(1 - \alpha) n p}{n p (1 - p)^{n - 1}}
+   \nonumber
+   \\
+   & =
+   \frac{(1 - \alpha)}{(1 - p)^{n - 1}}
+   \label{eq:gamma-2-mbogo-bino}
+\end{align}
+\end{subequations}
+So we see these equations, though nonlinear, are not horribly intractable.
+They are good for the $\theta$ for which their values stay between zero
+and one.  For \eqref{eq:gamma-2-mbogo-bino} this is for
+$$
+   0 \le p \le 1 - (1 - \alpha)^{1 / (n - 1)}
+$$
+at the upper end of this range where $\gamma_2 = 1$, we can make the
+change $C_2 = 2$ and $\gamma_2 = 0$ without affecting the critical function.
+
+With either of the $C$'s changed we get the more general equations
+\eqref{eq:gamma-1} and \eqref{eq:gamma-2} now in the form
+\begin{subequations}
+\begin{align}
+   1 - \gamma_1
+   & =
+   \frac{(1 - \alpha) [C_2 - \mu(\theta)] - E_\theta\{I_{1 2}(X) [C_2 - X]\}}
+   {f_\theta(C_1) (C_2 - C_1)}
+   \label{eq:gamma-1-muggs}
+   \\
+   1 - \gamma_2
+   & =
+   \frac{(1 - \alpha) [\mu(\theta) - C_1] - E_\theta\{I_{1 2}(X) [X - C_1]\}}
+   {f_\theta(C_2) (C_2 - C_1)}
+   \label{eq:gamma-2-muggs}
+\end{align}
+\end{subequations}
+where
+$$
+   I_{1 2}(x) = \begin{cases} 1, & C_1 < x < C_2 \\
+   0, & \text{otherwise} \end{cases}
+$$
+It follows from the general properties of exponential families that
+if $\theta$ is the canonical parameter
+$$
+   \frac{\partial}{\partial \theta} f_\theta(x) = [x - \mu(\theta)] f_\theta(x)
+$$
+$$
+   \frac{\partial}{\partial \theta} \mu(\theta) = \sigma^2(\theta)
+$$
+Hence
+\begin{align*}
+   \frac{\partial}{\partial \theta} (1 - \gamma_1)
+   & =
+   \frac{1}{f_\theta(C_1) (C_2 - C_1)} \times \biggl(
+   - (1 - \alpha) \sigma^2(\theta)
+   \\
+   & \qquad
+   - E_\theta\{I_{1 2}(X) [C_2 - X] [X - \mu(\theta)]\}
+   \\
+   & \qquad
+   + (1 - \alpha) [C_2 - \mu(\theta)] [\mu(\theta) - C_1]
+   \\
+   & \qquad
+   - E_\theta\{I_{1 2}(X) [C_2 - X] [\mu(\theta) - C_1]\} \biggr)
+   \\
+   & =
+   \frac{1}{f_\theta(C_1) (C_2 - C_1)} \times \biggl(
+\end{align*}
+
+
+
+
+In considering the distribution of the fuzzy $P$-value, we look at
+$\phi(x, \alpha, \theta)$ as a function of $\alpha$ for fixed $x$ and $\theta$,
+hence at \eqref{eq:gamma-ump} in the same way.  Now $T(x)$ will be a
+$(1 - \alpha)$-th quantile if
+$$
+   \pr_\theta\{ T(X) > T(x) \} \le \alpha \le 
+   \pr_\theta\{ T(X) \ge T(x) \}.
+$$
+Hence
+\begin{align*}
+   \phi(x, \alpha, \theta)
+   & =
+   \begin{cases}
+   0, & \pr_\theta\{ T(X) \ge T(x) \} \ge \alpha
+   \\
+   1, & \pr_\theta\{ T(X) > T(x) \} \le \alpha
+   \\
+   \frac{\alpha - \pr_\theta\{T(X) > T(x)\}}{\pr_\theta\{T(X) = T(x)\}}, &
+   \text{otherwise}
+   \end{cases}
+\end{align*}
+Since this is linear where not zero or one,
+it is the distribution function of a uniform random variable
+\begin{equation} \label{eq:fpv-ump-dist}
+   P \sim \text{Uniform}\bigl( \pr_\theta\{ T(X) > T(x) \},
+   \pr_\theta\{ T(X) \ge T(x) \} \bigr),
+\end{equation}
+that is, the fuzzy $P$-value is uniformly distributed on the interval
+of values that you figure it should spread it over.  Intuitively obvious, but
+we had to check to be sure.  Please don't feel put upon by our belaboring
+the obvious, because the UMPU two-tailed case is not quite so obvious, and
+understanding the UMP one-tailed case helps.
+
