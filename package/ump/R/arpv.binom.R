@@ -81,8 +81,11 @@ arpv.binom <- function(x, n, p, plot = TRUE, ...) {
     phi.min[phi.min < 0] <- 0
     phi.max[phi.max > 1] <- 1
 
-    alpha <- c(alpha.min[1], alpha.max)
-    phi <- c(phi.min[1], phi.max)
+    alpha.foo <- cbind(c(alpha.min, NA), c(NA, alpha.max))
+    phi.foo <- cbind(c(phi.min, NA), c(NA, phi.max))
+
+    alpha <- apply(alpha.foo, 1, mean, na.rm = TRUE)
+    phi <- apply(phi.foo, 1, mean, na.rm = TRUE)
 
     }
 

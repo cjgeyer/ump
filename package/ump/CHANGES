@@ -17,3 +17,13 @@
  0.4  added function fci.binom to plot fuzzy confidence intervals
 
  0.5  clean up for CRAN
+
+ 0.5-1  ?????
+
+ 0.5-2  remove some files from package that cause annoying warnings.
+
+        also changed code in arpv.binom.R to deal with inexact
+        computer arithmetic slightly better and eliminate some
+        warnings 2.6.0 gave on old code in the tests
+
+        put in NAMESPACE (wasn't using namespaces before)

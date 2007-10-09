@@ -1,0 +1,8 @@
+
+useDynLib(ump)
+
+export(arpv.binom)
+export(arpv.plot)
+export(fci.binom)
+export(umpu.binom)
+
