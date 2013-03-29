@@ -27,3 +27,7 @@
         warnings 2.6.0 gave on old code in the tests
 
         put in NAMESPACE (wasn't using namespaces before)
+
+ 0.5-3  switch licence to "MIT + file LICENCE" as per instructions from
+            Brian Ripley
+        out of monotone, into git, onto github
