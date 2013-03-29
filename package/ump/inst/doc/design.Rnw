@@ -16,6 +16,8 @@
 \RequirePackage{amsthm}
 \newtheorem{theorem}{Theorem}
 
+% \VignetteIndexEntry{UMP Package Design Document}
+
 \begin{document}
 
 \title{Design of the \texttt{ump} Package}
