@@ -31,3 +31,7 @@
  0.5-3  switch licence to "MIT + file LICENCE" as per instructions from
             Brian Ripley
         out of monotone, into git, onto github
+
+ 0.5-4  move vignette to vignettes directory, fix file LICENSE as per
+            CRAN instructions
+
