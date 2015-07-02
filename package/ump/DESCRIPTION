@@ -1,12 +1,13 @@
 Package: ump
-Version: 0.5-4
-Date: 2014-04-01
+Version: 0.5-6
+Date: 2015-07-02
 Title: Uniformly Most Powerful Tests
 Author: Charles J. Geyer <charlie@stat.umn.edu> and
     Glen D. Meeden <glen@stat.umn.edu>
 Maintainer: Charles J. Geyer <charlie@stat.umn.edu>
-Depends: R (>= 2.6.0)
-Description: Does unifomly most powerful (UMP) and uniformly most
+Depends: R (>= 2.10.0)
+Imports: stats, graphics
+Description: Does uniformly most powerful (UMP) and uniformly most
     powerful unbiased (UMPU) tests.  At present only distribution implemented
     is binomial distribution.  Also does fuzzy tests and confidence intervals
     (following Geyer and Meeden, Statistical Science, 2005) for the binomial

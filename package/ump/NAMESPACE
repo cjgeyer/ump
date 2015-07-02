@@ -6,3 +6,5 @@ export(arpv.plot)
 export(fci.binom)
 export(umpu.binom)
 
+importFrom(stats, dbinom, pbinom)
+importFrom(graphics, plot, par, lines, segments)
