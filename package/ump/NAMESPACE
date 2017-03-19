@@ -1,5 +1,5 @@
 
-useDynLib(ump)
+useDynLib(ump, .registration = TRUE, .fixes = "C_")
 
 export(arpv.binom)
 export(arpv.plot)

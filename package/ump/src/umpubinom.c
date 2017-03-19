@@ -5,6 +5,7 @@
 
 #include <R.h>
 #include <Rmath.h>
+#include "ump.h"
 
 void
 umpubinom(int *nin, double *alphain, double *pin, int *maxiterin,

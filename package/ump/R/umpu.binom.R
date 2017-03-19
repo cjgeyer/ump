@@ -26,7 +26,7 @@ umpu.binom <- function(x, n, p, alpha, maxiter = 10, tol = 1e-9) {
     if (! all(0 <= alpha & alpha <= 1)) stop("alpha not in [0, 1]")
 
     if (length(p) > 1) {
-        out <- .C("umpubinomt",
+        out <- .C(C_umpubinomt,
             x = as.integer(x),
             n = as.integer(n),
             alpha = as.double(alpha),
@@ -34,10 +34,9 @@ umpu.binom <- function(x, n, p, alpha, maxiter = 10, tol = 1e-9) {
             np = length(p),
             maxiter = as.integer(maxiter),
             result = double(length(p)),
-            tol = as.double(tol),
-            PACKAGE = "ump")
+            tol = as.double(tol))
     } else if (length(alpha) > 1) {
-        out <- .C("umpubinoma",
+        out <- .C(C_umpubinoma,
             x = as.integer(x),
             n = as.integer(n),
             alpha = as.double(alpha),
@@ -45,10 +44,9 @@ umpu.binom <- function(x, n, p, alpha, maxiter = 10, tol = 1e-9) {
             p = as.double(p),
             maxiter = as.integer(maxiter),
             result = double(length(alpha)),
-            tol = as.double(tol),
-            PACKAGE = "ump")
+            tol = as.double(tol))
     } else {
-        out <- .C("umpubinomx",
+        out <- .C(C_umpubinomx,
             x = as.integer(x),
             nx = length(x),
             n = as.integer(n),
@@ -56,8 +54,7 @@ umpu.binom <- function(x, n, p, alpha, maxiter = 10, tol = 1e-9) {
             p = as.double(p),
             maxiter = as.integer(maxiter),
             result = double(length(x)),
-            tol = as.double(tol),
-            PACKAGE = "ump")
+            tol = as.double(tol))
     }
     return(out$result)
 }

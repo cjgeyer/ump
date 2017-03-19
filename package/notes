@@ -1,2 +1,4 @@
-rm -f ump/src/*.{o,so,rds}
-R CMD check ump
+export PKG_CFLAGS="-Wall -Wextra -pedantic"
+rm -f ump_*.tar.gz # if version number has changed
+R CMD build ump
+R CMD check ump_*.tar.gz
