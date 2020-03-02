@@ -1,4 +1,10 @@
-export PKG_CFLAGS="-Wall -Wextra -pedantic"
-rm -f ump_*.tar.gz # if version number has changed
+# to add extra compiler warnings
+# note that file myMakevars must be a copy of aster/src/Makevars
+#     with extra stuff added
+export R_MAKEVARS_USER=`pwd`/myMakevars
+
+# if version number has changed
+rm -f ump_*.tar.gz
+
 R CMD build ump
 R CMD check ump_*.tar.gz
