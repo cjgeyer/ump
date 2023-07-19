@@ -9,3 +9,5 @@
 *.Rcheck
 *.tar.gz
 design.tex
+algo.tex
+*.out
