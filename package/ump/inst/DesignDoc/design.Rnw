@@ -13,8 +13,13 @@
 \newcommand{\NegativeBinomialDis}{\text{NegBin}}
 \newcommand{\PoissonDis}{\text{Pois}}
 
+\newcommand{\fatdot}{\,\cdot\,}
+
 \RequirePackage{amsthm}
 \newtheorem{theorem}{Theorem}
+
+\newcommand{\REVISED}{\begin{center} \LARGE REVISED DOWN TO HERE \end{center}}
+\newcommand{\MOVED}[1][equation]{\begin{center} [#1 moved] \end{center}}
 
 % \VignetteIndexEntry{UMP Package Design Document}
 
@@ -233,7 +238,9 @@ over the range of $\alpha$ such that both
 [because of steps (a) and (b), both $\gamma_i$ are now greater than
 zero, so $\alpha$ can be decreased].
 \end{enumerate}
-\item Repeat step 2 until the whole range $0 \le \alpha \le 1$ is covered.
+\item Repeat step~2 until the whole range $0 \le \alpha \le 1$ is covered
+(this may require an infinite number of iterations of step~2 if the sample
+space is infinite).
 \end{enumerate}
 
 This algorithm is certainly unwieldy, but it does make clear that
@@ -243,6 +250,18 @@ Hence it is the distribution function of a continuous
 random variable (an abstract randomized $P$-value).
 Clearly, it is differentiable on
 each linear piece and the derivative is piecewise constant (a step function).
+
+In case the sample space is unbounded, $x \mapsto \phi(x, \alpha, \theta)$
+given by \eqref{eq:umpu-crit} cannot be identically equal to zero,
+which is required to satisfy \eqref{eq:umpu-a} and \eqref{eq:umpu-b}
+when $\alpha = 0$.
+But we do have $\phi(x, \alpha, \theta)$ converging pointwise to the constant
+function $x \mapsto 0$ as $C_1$ approaches the lower boundary
+(possibly $- \infty$)
+and $C_2$ approaches the upper boundary (possibly $+ \infty$) and
+$\gamma_1 = \gamma_2 = 0$.  But this does show that the algorithm given
+above does find a solution for all $x$ and $0 < \alpha \le 1$ for each
+$\theta$.
 
 \subsection{Endpoint Behavior} \label{sec:endpoint}
 
@@ -864,7 +883,7 @@ $$
 $$
 
 And in hindsight we see that we have invented the conditional, exact,
-uniformly most whatever (UMW) competitor of McNemar's test (Lindgren,
+UMP or UMPU competitor of McNemar's test (Lindgren,
 \emph{Statistical Theory}, pp.~381--383).
 
 \subsection{Summary}

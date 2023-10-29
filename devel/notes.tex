@@ -1,0 +1,157 @@
+
+\documentclass[11pt]{article}
+
+\usepackage{amsmath}
+\usepackage{indentfirst}
+
+\newcommand{\inner}[1]{\langle #1 \rangle}
+\newcommand{\set}[1]{\,\{ #1 \,\}}
+
+\newcommand{\opand}{\mathop{\rm and}}
+\newcommand{\opor}{\mathop{\rm or}}
+
+\let\code=\texttt
+
+\begin{document}
+
+\section{UMPU Dependence on Parameter}
+
+These are the equations we use to determine the UMPU test,
+equations (3.9a) and (3.9b) in the Geyer and Meeden (2005).
+\begin{equation} \label{eq:one-minus-gamma}
+\begin{split}
+   1 - \gamma_1
+   & =
+   \frac{(1 - \alpha) (C_2 - \mu) + m_{1 2} - C_2 p_{1 2}}
+   {p_1 (C_2 - C_1)}
+   \\
+   1 - \gamma_2
+   & =
+   \frac{(1 - \alpha) (\mu - C_1) - m_{1 2} + C_1 p_{1 2}}
+   {p_2 (C_2 - C_1)}
+\end{split}
+\end{equation}
+Alternatively, we have
+\begin{equation} \label{eq:gamma}
+\begin{split}
+   \gamma_1
+   & =
+   \frac{\alpha (C_2 - \mu) + (M_1 - C_2 P_1) + (M_2 - C_2 P_2)}
+   {p_1 (C_2 - C_1)}
+   \\
+   \gamma_2
+   & =
+   \frac{\alpha (\mu - C_1) - (M_2 - C_1 P_2) - (M_1 - C_1 P_1)}
+   {p_2 (C_2 - C_1)}
+\end{split}
+\end{equation}
+which are (12a) and (12b) in \code{algo.pdf} in this repository,
+and the quantities therein are defined in the referenced documents.
+%
+% Check both of these in Mathematica
+%
+% gamma1 = 1 - ((1 - alpha) (C2 - mu) + m12 - C2 p12) / (p1 (C2 - C1))
+% gamma2 = 1 - ((1 - alpha) (mu - C1) - m12 + C1 p12) / (p2 (C2 - C1))
+% (1 - p1 - p2 - p12) + gamma1 p1 + gamma2 p2
+% Simplify[%]
+% (mu - p1 C1 - p2 C2 - m12) + gamma1 p1 C1 + gamma2 p2 C2
+% Simplify[%]
+%
+% gamma1 = (alpha (C2 - mu) + (M1 - C2 P1) + (M2 - C2 P2)) / (p1 (C2 - C1))
+% gamma2 = (alpha (mu - C1) - (M2 - C1 P2) - (M1 - C1 P1)) / (p2 (C2 - C1))
+% P1 + P2 + p1 gamma1 + p2 gamma2
+% Simplify[%]
+% M1 + M2 + p1 gamma1 C1 + p2 gamma2 C2
+% Simplify[%]
+
+In order to avoid writing pairs of equations we take $i$ to be either 1 or 2
+and $j$ to be the other of 1 or 2 (that is, $j = 3 - i$).
+We also take the canonical statistic to be $X$ rather than $T(X)$.
+We also define the events
+\begin{align*}
+   A_1 & = \set{ x : x < C_1 }
+   \\
+   A_2 & = \set{ x : C_2 < x }
+   \\
+   A_{1 2} & = \set{ x : C_1 < x < C_2 }
+\end{align*}
+and write $A_{2 1} = A_{1 2}$, $m_{2 1} = m_{1 2}$, and
+$p_{2 1} = p_{1 2}$.  Then \eqref{eq:one-minus-gamma} becomes
+\begin{align*}
+   1 - \gamma_i
+   & =
+   \frac{(1 - \alpha) (C_j - \mu) + m_{i j} - C_j p_{i j}}
+   {p_i (C_j - C_i)}
+   \\
+   & =
+   \frac{ E_\theta \left\{ (1 - \alpha) (C_j - X) + (X - C_j) I_{A_{1 2}}(X)
+   \right\}}
+   {f_\theta(C_i) (C_j - C_i)}
+   \\
+   & =
+   \frac{ E_\theta \left\{ [I_{A_{1 2}^c}(X) - \alpha] (C_j - X) \right\}}
+   {f_\theta(C_i) (C_j - C_i)}
+   \\
+   & =
+   \int
+   \frac{[I_{A_{1 2}^c}(x) - \alpha] (C_j - x)}
+   {C_j - C_i} \cdot \frac{f_\theta(x)}{f_\theta(C_i)} \lambda(d x)
+   \\
+   & =
+   \int
+   \frac{[I_{A_{1 2}^c}(x) - \alpha] (C_j - x)}
+   {C_j - C_i} \cdot e^{\inner{x - C_i, \theta}} \lambda(d x)
+\end{align*}
+So
+\begin{equation} \label{eq:deriv}
+   - \frac{\partial \gamma_i}{\partial \theta} =
+   \int
+   \frac{[I_{A_{1 2}^c}(x) - \alpha] (C_j - x) (x - C_i)}
+   {C_j - C_i} \cdot e^{\inner{x - C_i, \theta}} \lambda(d x)
+\end{equation}
+
+Take the case $i = 1$ and $j = 2$.
+For $x \in A_{1 2}$ we have
+\begin{gather*}
+   I_{A_{1 2}^c}(x) - \alpha < 0
+   \\
+   C_i < x < C_j
+\end{gather*}
+so the integrand in \eqref{eq:deriv} is negative.
+For $x \notin A_{1 2}$ we have
+\begin{gather*}
+   I_{A_{1 2}^c}(x) - \alpha > 0
+   \\
+   x \le C_i < C_j \opor C_i < C_j \le x
+\end{gather*}
+hence
+$$
+   (C_j - x) (x - C_i)  \le 0
+$$
+so the integrand in \eqref{eq:deriv} is nonpositive.
+Hence \eqref{eq:deriv} is negative,
+and $\partial \gamma_1 / \partial \theta$ is positive.
+
+Now take the case (the other equation) $i = 2$ and $j = 1$.
+For $x \in A_{1 2}$ we have
+\begin{gather*}
+   I_{A_{1 2}^c}(x) - \alpha < 0
+   \\
+   C_j < x < C_i
+\end{gather*}
+so the integrand in \eqref{eq:deriv} is positive.
+For $x \notin A_{1 2}$ we have
+\begin{gather*}
+   I_{A_{1 2}^c}(x) - \alpha > 0
+   \\
+   x \le C_j < C_i \opor C_j < C_i \le x
+\end{gather*}
+hence
+$$
+   (C_j - x) (x - C_i)  \le 0
+$$
+so the integrand in \eqref{eq:deriv} is nonnegative.
+Hence \eqref{eq:deriv} is positive,
+and $\partial \gamma_1 / \partial \theta$ is negative.
+
+\end{document}
