@@ -6,6 +6,9 @@
 
 \newcommand{\inner}[1]{\langle #1 \rangle}
 \newcommand{\set}[1]{\,\{ #1 \,\}}
+\newcommand{\abs}[1]{\lvert #1 \rvert}
+
+\newcommand{\fatdot}{\,\cdot\,}
 
 \newcommand{\opand}{\mathop{\rm and}}
 \newcommand{\opor}{\mathop{\rm or}}
@@ -13,6 +16,163 @@
 \let\code=\texttt
 
 \begin{document}
+
+\section{UMPU Dependence on Parameter}
+
+\subsection{Basic UMPU Equations}
+
+When $X$ is canonical, the fundamental UMPU equations can be written
+\begin{subequations}
+\begin{align}
+   E_\theta\{ \phi(X, \alpha, \theta) \} & = \alpha
+   \label{eq:umpu-a}
+   \\
+   E_\theta\{ X \phi(X, \alpha, \theta) \} & = \alpha \mu
+   \label{eq:umpu-b}
+\end{align}
+\end{subequations}
+where $\theta$ is the canonical parameter and $\mu$ is the corresponding
+mean value parameter.
+Subtracting $\mu$ times the first from the second gives
+$$
+   E_\theta\{ (X - \mu) \phi(X, \alpha, \theta) \} = 0
+$$
+and this can be rewritten
+$$
+   E_\theta\{ (\mu - X) I_{(- \infty, \mu)}(X) \phi(X, \alpha, \theta) \}
+   =
+   E_\theta\{ (X - \mu) I_{(\mu, \infty)}(X) \phi(X, \alpha, \theta) \}
+$$
+and using $C_1 \le \mu \le C_2$ and the form of $\phi$ given
+by the UMPU theorem the latter can be rewritten
+\begin{multline*}
+   \int_{- \infty}^{C_1} (\mu - x) \phi(x, \alpha, \theta)
+   e^{x \theta - c(\theta)} \, \lambda(d x)
+   \\
+   =
+   \int_{C_2}^\infty (x - \mu) \phi(x, \alpha, \theta)
+   e^{x \theta - c(\theta)} \, \lambda(d x)
+\end{multline*}
+where $c(\theta)$ is the cumulant function and $\lambda$ is an order
+discrete positive measure (with respect to which the exponential family
+has densities).  We note that the integrands on both sides of this
+equation are nonnegative and zero only when $x = \mu$.
+
+\subsection{Basic Exponential Family Theory}
+
+If we differentiate
+$$
+   \frac{\partial}{\partial \theta} \log f_\theta(x) = x - \mu
+$$
+where $\mu$ is the mean value parameter corresponding to $\theta$
+we see that as $\mu$ goes over its range of values (also an open interval
+because the $\theta \to \mu$ map is infinitely differentiable and monotone)
+that probabilities increase as $\mu$ increases for $x < \mu$ and then decrease.
+
+Here we are interested in the case where the mean value parameter space is
+unbounded above, so $\mu \to \infty$ as $\theta$ converges to the upper
+bound of its parameter space, which we call $B$, which may be either finite
+or infinity.
+
+We have two different arguments depending on whether $B$ is finite or not.
+
+First assume $B$ is infinite, if $x_1 < x_2$,
+$$
+   \frac{f_\theta(x_1)}{f_\theta(x_2)} = e^{(x_1 - x_2) \theta}
+$$
+as $\theta \to \infty$ (in this case) the right-hand side goes to $- \infty$.
+But (for discrete data) probabilities are bounded by one so
+\begin{equation} \label{eq:limit-zero}
+   f_\theta(x) \to 0, \qquad \text{as $\theta \to B$ and $\mu \to \infty$}.
+\end{equation}
+(And there is a similar argument for continuous data involving probabilities
+of intervals in the denominator.)
+
+Second assume $B$ is finite, then
+$$
+   f_\theta(x) \le e^{x B - c(\theta)}
+$$
+but $c(\theta) \to \infty$ as $\theta \to B$ by lower-semicontinuity
+of cumulant functions.  So again we have \eqref{eq:limit-zero}.
+
+Now let $A$ be any event that is bounded above (in the mean value parameter
+space, where $X$ also takes values).  Then for any nonnegative function $g$
+$$
+    E_\mu \{ I_A(X) g(X) \} \to 0, \qquad \text{as $\mu \to \infty$}
+$$
+by monotone convergence (because the integrand is decreasing after $\mu$
+is greater than any element of $A$), provided the expectation exists for
+any such $\mu$.
+
+\subsection{Fuzzy Confidence Intervals}
+
+So now we want to prove that in the formula for the UMPU critical function
+we have $C_1 \to \infty$ as $\mu \to \infty$.
+From what we have already proved
+\begin{align*}
+   E_\mu\{ I_{(- \infty, \mu)}(X) \phi(X, \alpha, \mu) \} & \to 0
+   \\
+   E_\mu\{ (\mu - X) I_{(- \infty, \mu)}(X) \phi(X, \alpha, \mu) \} & \to 0
+\end{align*}
+
+\begin{center} \LARGE REVISED DOWN TO HERE \end{center}
+
+For a regular full exponential family the canonical parameter space
+is an open convex subset of the vector space where that parameter lives.
+Hence an open interval if we have a one-parameter family.
+
+Now $\mu \to \infty$ implies
+$$
+   \int x e^{x \theta - c(\theta)} \, \lambda(d x) \to \infty
+$$
+but for $x_1 < x_2$ with both possible values of $X$ we have
+$$
+   \frac{f_\theta(x_1)}{f_\theta(x_2)} = e^{(x_1 - x_2) \theta}
+$$
+
+\begin{center} \LARGE REVISED DOWN TO HERE \end{center}
+
+and multiplying both sides through by $e^{c(\theta)}$ gives
+$$
+   \int_{- \infty}^{C_1} (\mu - x) \phi(x, \alpha, \theta)
+   e^{x \theta} \, \lambda(d x)
+   =
+   \int_{C_2}^\infty (x - \mu) \phi(x, \alpha, \theta)
+   e^{x \theta} \, \lambda(d x)
+$$
+and multiplying both sides through by $e^{x \psi} e^{- x \psi}$ gives
+$$
+   \int_{- \infty}^{C_1} (\mu - x) \phi(x, \alpha, \theta)
+   e^{x (\theta + \psi)} \, \lambda^*(d x)
+   =
+   \int_{C_2}^\infty (x - \mu) \phi(x, \alpha, \theta)
+   e^{x (\theta + \psi)} \, \lambda^*(d x)
+$$
+where $\lambda^*(d x) = e^{- x \psi} \lambda(d x)$,
+and multiplying both sides through by $e^{- \mu (\theta + \psi)}$ gives
+\begin{multline*}
+   \int_{- \infty}^{C_1} (\mu - x) \phi(x, \alpha, \theta)
+   e^{(x - \mu) (\theta + \psi)} \, \lambda^*(d x)
+   \\
+   =
+   \int_{C_2}^\infty (x - \mu) \phi(x, \alpha, \theta)
+   e^{(x - \mu) (\theta + \psi)} \, \lambda^*(d x)
+   \\
+   \ge
+   \int_{s(C_2)}^\infty (x - \mu)
+   e^{(x - \mu) (\theta + \psi)} \, \lambda^*(d x)
+\end{multline*}
+where $s(\fatdot)$ denotes the successor function in the ordered set
+that is the support of $X$, that is, $s(C_2)$ is the support point next
+larger than $C_2$.
+
+And now we have two cases.
+It may be that $\mu \to \infty$ implies
+$\theta \to \infty$.  This is the case for all of our distributions of
+interest except negative binomial.
+Or it may be that $\mu \to \infty$ implies $\theta \to \psi$, where $\psi$
+is the upper boundary point of the canonical parameter space.  In the case
+of the negative binomial with the usual canonical parameter $\psi = 0$.
 
 \section{UMPU Dependence on Parameter}
 
@@ -154,4 +314,24 @@ so the integrand in \eqref{eq:deriv} is nonnegative.
 Hence \eqref{eq:deriv} is positive,
 and $\partial \gamma_1 / \partial \theta$ is negative.
 
+\subsection{Try II}
+
+Want to show that in a regular full exponential family, if the mean value
+parameter $\mu$ goes to infinity, then
+$$
+   E_\mu \left\{ \abs{X} I_{(- \infty, b)}(X) \right\} \to 0
+$$
+for any fixed $b$.
+
+Write
+\begin{align*}
+   E_\mu \left\{ \abs{X} I_{(- \infty, b)}(X) \right\}
+   & =
+   \int_{- \infty}^b \abs{x} f_\theta(x) \lambda(d x)
+   \\
+   & =
+   e^{- c(\theta)} \int_{- \infty}^b \abs{x} e^{x \theta} \lambda(d x)
+\end{align*}
+
+\subsection{Try I}
 \end{document}
