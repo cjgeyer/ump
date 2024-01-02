@@ -258,14 +258,19 @@ intervals.
 
 \subsection{Computing}
 
-So everything depends on the critical function $\phi(x, \alpha, \theta)$ for
-the uniformly most powerful (UMP) one-tailed tests and
-the uniformly most powerful unbiased (UMPU) two-tailed test for
+So everything depends on the critical function $\phi(x, \alpha, \theta)$.
+We want to provide computation of the critical function for
 some discrete exponential families that arise commonly in statistical
 inference (Section~\ref{sec:families} below).
 See Section~\ref{sec:ump-umpu} below for more on UMP and UMPU procedures
 and critical functions.  For more, see \citet{geyer-meeden}.
 For even more, see \citet{lehmann}.
+
+And we want our implementation of the critical function to efficiently
+vectorize over a vector of $\alpha$ values for computation of fuzzy $P$-values
+and vectorize over a vector of $\theta$ values for computation of fuzzy
+confidence intervals.  More about computation starting
+with Section~\ref{sec:algorithms} below.
 
 \subsection{Families of Distributions} \label{sec:families}
 
@@ -1972,7 +1977,7 @@ And in hindsight we see that we have invented the conditional, exact,
 uniformly most whatever (UMW) competitor of McNemar's test (Lindgren,
 \emph{Statistical Theory}, pp.~381--383).
 
-\section{Algorithms}
+\section{Algorithms} \label{sec:algorithms}
 
 \subsection{Jobs}
 
@@ -1990,6 +1995,48 @@ the maximum of the lengths of the numerical arguments for the other functions.
 The numerical arguments other than \code{n} are recycled to the length
 of the result.  Only the first elements of the logical arguments are used.
 \end{quotation}
+
+But rather than following this rule and only this rule, we should also
+return values at the knots (which users cannot specify because they don't
+know where they are).
+\begin{itemize}
+\item For fuzzy $P$-values, which are piecewise linear, there should at
+    at least be an option to return only the knots and values at the knots,
+    because that is all R needs to plot the function.
+\item Since probability density functions are more easily interpreted than
+    cumulative distribution functions, there should also be an option
+    to return the derivative of the fuzzy $P$-value, which is undefined
+    at the knots and constant between knots.  Of course, the derivative
+    between two knots is given by rise over run (the difference of the
+    values at those two knots divided by the difference of the knots,
+    but that may involve catastrophic cancellation, and the computer
+    should be more accurate).
+\item Fuzzy confidence intervals are constant on the interval where they
+    are equal to one (the core) so we can save memory both for the returned
+    R object, and any plots made from it, by not returning any values in
+    the core (even if asked for by the user), at least as an option.
+    Instead we return the endpoints of the core, and the values (one)
+    at these points.
+
+    The set where a fuzzy confidence interval is nonzero is called its
+    \emph{support} (not to be confused with the concept of support in
+    probability theory (where the probability mass function is nonzero).
+    We can also save memory by returning the endpoints of the support,
+    the values there (perhaps zero) and the boundaries of the parameter space
+    and the values there (perhaps zero) and points and values for no other
+    points outside the support.
+    
+    Finally on the intervals where the fuzzy confidence intervals (where
+    the membership function is nonlinear) we need to return the membership
+    function values on a grid of parameter values and we need users to specify
+    the density of points in the grid rather than the number of points because
+    the users do not know the lengths of these intervals of rise and fall.
+    Moreover, we need to insert the parameter values and membership function
+    values at knots because users don't know those either, and not including
+    the knots will make plots not show the knots.
+\end{itemize}
+
+\REVISED
 
 But we are also interested in fuzzy $P$-values, where we compute
 $\phi(x, \alpha, \theta)$ for fixed $x$ and $\theta$ but for all $\alpha$
@@ -2758,7 +2805,7 @@ plot(p, 1 - phi, xlim = c(0, xmax), ylim = 0:1,
 
 Fifth example (Figure~\ref{fig:fuzzy-confint-five} below),
 now the observed $x$ is not either of the two lowest possible values
-or either of the two highers.  So the fuzzy confidence interval has the
+or either of the two highest.  So the fuzzy confidence interval has the
 typical behavior: as $\mu$ and $\theta$ increase from one end of the
 parameter space to the other, the fuzzy confidence interval is zero
 for a while, then increases smoothly to one, then is one for a while

@@ -3,6 +3,10 @@
 
 \usepackage{amsmath}
 \usepackage{indentfirst}
+\usepackage{xr-hyper}
+\usepackage[colorlinks=true,citecolor=blue,urlcolor=blue]{hyperref}
+
+\externaldocument[a-]{algo}
 
 \newcommand{\inner}[1]{\langle #1 \rangle}
 \newcommand{\set}[1]{\,\{ #1 \,\}}
@@ -15,24 +19,60 @@
 
 \let\code=\texttt
 
+\newcommand{\REVISED}{\begin{center} \LARGE REVISED DOWN TO HERE \end{center}}
+\newcommand{\MOVED}[1][equation]{\begin{center} [#1 moved] \end{center}}
+
 \begin{document}
 
 \section{UMPU Dependence on Parameter}
 
-\subsection{Basic UMPU Equations}
+\subsection{Fuzzy $P$-Values}
 
-When $X$ is canonical, the fundamental UMPU equations can be written
-\begin{subequations}
+In calculating fuzzy $P$-values, which are critical functions
+$\phi(x, \fatdot, \theta)$ for fixed $x$ and $\theta$,
+we use either equation \eqref{a-eq:umpu-spec-a} and \eqref{a-eq:umpu-spec-b}
+in the main document (for large values of the argument) or
+\eqref{a-eq:gamma-1} and \eqref{a-eq:gamma-2} (for small values of the
+argument.
+
+Let $\mu$ be the mean value parameter corresponding to $\theta$.
+If $x = \mu$, we use \eqref{a-eq:umpu-spec-b} to obtain the value
+of the critical function.
+If $x < \mu$, we use \eqref{a-eq:gamma-1} to obtain the value.
+If $x > \mu$, we use \eqref{a-eq:gamma-2} to obtain the value.
+
+In case $x = \mu$, we are done.  Equation \eqref{a-eq:umpu-spec-b} gives
+the entire distribution for the fuzzy $P$-value.
+
+In case $x < \mu$, we know $C_1 = x$ gives values of the critical function
+strictly between zero and one, but we do not yet know the value or values
+of $C_2$ that work and need an algorithm to find them.
+
+The case $x > \mu$ is similar to the $x < \mu$ case (just swap left and
+right on the number line).  So we only do the former.
+
+Here we repeat the key equations
+\eqref{a-eq:gamma-1} and \eqref{a-eq:gamma-2}.
 \begin{align}
-   E_\theta\{ \phi(X, \alpha, \theta) \} & = \alpha
-   \label{eq:umpu-a}
+   \gamma_1
+   & =
+   \frac{\alpha (C_2 - \mu) + (M_1 - C_2 P_1) + (M_2 - C_2 P_2)}
+   {p_1 (C_2 - C_1)}
+   \tag{\ref{a-eq:gamma-1}}
    \\
-   E_\theta\{ X \phi(X, \alpha, \theta) \} & = \alpha \mu
-   \label{eq:umpu-b}
+   \gamma_2
+   & =
+   \frac{\alpha (\mu - C_1) - (M_2 - C_1 P_2) - (M_1 - C_1 P_1)}
+   {p_2 (C_2 - C_1)}
+   \tag{\ref{a-eq:gamma-2}}
 \end{align}
-\end{subequations}
-where $\theta$ is the canonical parameter and $\mu$ is the corresponding
-mean value parameter.
+We use these with $C_1 = x$ and a guess for $C_2$.  If both equations
+give values between zero and one (inclusive) for some $\alpha$,
+then we have a correct $C_2$ (not necessarily the only one).
+
+
+\REVISED
+
 Subtracting $\mu$ times the first from the second gives
 $$
    E_\theta\{ (X - \mu) \phi(X, \alpha, \theta) \} = 0
