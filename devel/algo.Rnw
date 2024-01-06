@@ -133,13 +133,15 @@ interval $[0, 1]$.
 \citet{geyer-meeden} say the following about the critical function.
 \begin{itemize}
 \item The function $\phi(\fatdot, \alpha, \theta)$ they call the
-    fuzzy (or abstract randomized) decision function for the hypothesis test.
+    fuzzy (or abstract randomized) decision function for the hypothesis test
+    having significance level $\alpha$ and null hypothesis $\theta$.
 \item The function $1 - \phi(x, \alpha, \fatdot)$ they call
     the (membership function in the sense of fuzzy set theory) of the
-    fuzzy confidence interval with coverage $1 - \alpha$.
+    fuzzy confidence interval with coverage $1 - \alpha$ and observed data $x$.
 \item The function $\phi(x, \fatdot, \theta)$ they call the
     (distribution function of) the abstract randomized (or fuzzy) $P$-value
-    for the hypothesis test.
+    for the hypothesis test having null hypothesis $\theta$ and
+    observed data $x$.
 \end{itemize}
 
 That the function $\phi(x, \fatdot, \theta)$ is a distribution
@@ -241,7 +243,7 @@ Then we have the same three properties.  Here we only consider UMPU two-tailed
 intervals.
 \begin{itemize}
 \item The \emph{exactness} property is $c(\theta, \theta) = 1 - \alpha$
-    for all $\theta$.  We have the exact desired coverage, unlike classical
+    for all $\theta$.  We have the exact desired coverage, unlike crisp
     confidence intervals.
 \item The \emph{unbiasedness} property is $c(\theta', \theta) \le 1 - \alpha$,
     for all $\theta'$ and $\theta$.
@@ -266,15 +268,17 @@ See Section~\ref{sec:ump-umpu} below for more on UMP and UMPU procedures
 and critical functions.  For more, see \citet{geyer-meeden}.
 For even more, see \citet{lehmann}.
 
-And we want our implementation of the critical function to efficiently
+We want our implementation of the critical function to efficiently
 vectorize over a vector of $\alpha$ values for computation of fuzzy $P$-values
 and vectorize over a vector of $\theta$ values for computation of fuzzy
 confidence intervals.  More about computation starting
 with Section~\ref{sec:algorithms} below.
 
+\pagebreak[3]
+
 \subsection{Families of Distributions} \label{sec:families}
 
-These discrete exponential families are
+The discrete exponential families we are interested in are
 \begin{itemize}
 \item the binomial distribution (more strictly, any binomial exponential
     family of distributions --- different sample sizes determine different
@@ -763,31 +767,32 @@ the smallest support (event having probability one) is the set
 of \emph{atoms} (points having positive probability), and we will
 call that \emph{the support}.
 
-We will say that a random variable or its distribution
-is \emph{topologically discrete} if the support, considered as a subspace
-of the real line, has the discrete topology: for every point $x$ of the
-support there is an $\varepsilon > 0$ such that there are no other
-points of the support between $x - \varepsilon$ and $x + \varepsilon$.
+We will say that a (probabilistically) discrete random variable
+or its distribution
+is \emph{order discrete} if the support, considered as a subspace
+of the real line, is a discrete ordered set: for every point $x$ of the
+support except the least there is a next lower point in the support,
+and for every point $x$ of the support except the greatest there is
+a next higher point in the support.
 This property
 holds for all of our distributions of interest (which are integer valued).
 
 It holds for all discrete distributions of applied statistics as far as I know.
 It is easy enough to construct a probabilistically discrete but not
-topologically discrete example.
-A mixture of an atom at zero and $1 / X$ where $X$ is Poisson does the job.
-There is no neighborhood of zero that does not contain other points of the
-support.  But I do not know what an example
+order discrete example.
+A mixture of an atom at $-1$ and $1 / X$ where $X$ is Poisson does the job.
+No point above $-1$ is next to it.  But I do not know what an example
 of such a distribution would be that has a real application.
 
 \begin{theorem} \label{th:fuzzy-df}
 Assume a regular full one-parameter exponential family such that the
-canonical statistic is probabilistically and topologically discrete.
+canonical statistic is probabilistically and order discrete.
 For either UMP or UMPU
-the function $F_x$ defined by $F_x(\alpha) = \phi(x, \alpha, \theta)$
+the function $F_{x, \theta} : \alpha \mapsto \phi(x, \alpha, \theta)$
 is continuous, piecewise linear, nondecreasing on the interval $[0, 1]$,
 and maps onto the interval $[0, 1]$.
-$F_x$ is strictly increasing near $\alpha$ such that $0 < F_x(\alpha) < 1$.
-Hence $F_x$ is the distribution function of a continuous
+$F_{x, \theta}$ is strictly increasing near $\alpha$ such that $0 < F_{x, \theta}(\alpha) < 1$.
+Hence $F_{x, \theta}$ is the distribution function of a continuous
 random variable having support that is a subinterval of $[0, 1]$.
 
 For UMP the distribution having this distribution function is uniform on
@@ -800,7 +805,7 @@ In aid of proving this theorem we state an algorithm
 \caption{Computing the UMPU Critical Function}
 \label{alg:lots-of-work}
 Assume a regular full one-parameter exponential family such that the
-canonical statistic is topologically discrete.
+canonical statistic is order discrete.
 For fixed $\theta$, the following computes the critical function of the
 UMPU test $\phi(x, \alpha, \theta)$ for all $x$ and $\alpha > 0$.
 \begin{enumerate}
@@ -844,7 +849,7 @@ over the range of $\alpha$ such that both
 \end{enumerate}
 \end{algorithm}
 
-Without the topologically discrete assumption, it could be
+Without the order discrete assumption, it could be
 that there would be no next point to select in step~2a or~2b of the
 algorithm (or even points $C_1$ and $C_2$ to choose in 1b).
 
@@ -883,15 +888,15 @@ steps change the critical function continuously in $\alpha$ using
 Moreover, \eqref{eq:umpu-spec-a},
 \eqref{eq:gamma-1}, and \eqref{eq:gamma-2} are linear and strictly
 increasing in $\alpha$.  So this proves
-$F_x$ is continuous, piecewise linear, and increasing
+$F_{x, \theta}$ is continuous, piecewise linear, and increasing
 on the open interval where its values are strictly between 0 and 1.
 And we have proved that the supremum of its values is 1 but still
 have to prove the infimum is 0.
 
 If we ever have $C_1 < T(x) < C_2$ at any point in execution of
-Algorithm~\ref{alg:lots-of-work}, then we have $F_x(\alpha) = 0$
+Algorithm~\ref{alg:lots-of-work}, then we have $F_{x, \theta}(\alpha) = 0$
 for the rest of the execution of the algorithm.  Thus the only way we can
-have $F_x(\alpha) > 0$ for the whole execution is,
+have $F_{x, \theta}(\alpha) > 0$ for the whole execution is,
 if from some point in the execution onward either step~2a or step~2b
 is never executed again (hence the other is executed infinitely often).
 This can only happen with an infinite sample space.  With the families
@@ -932,7 +937,7 @@ Hence for sufficiently small $\alpha$ this will go negative unless $P_1 = 0$
 which implies that $C_1$ is the lower bound of the sample space, in which
 case $\alpha$ can decrease to zero.  Thus
 Algorithm~\ref{alg:lots-of-work} can make $\alpha$ arbitrarily
-close to zero, and when it does $F_x(\alpha)$ also gets
+close to zero, and when it does $F_{x, \theta}(\alpha)$ also gets
 arbitrarily close to zero.  This proves the assertions about continuity
 on $[0, 1]$.
 \end{proof}
@@ -1185,7 +1190,7 @@ With the assumptions of Theorem~\ref{th:fuzzy-df},
 a fuzzy confidence interval for the canonical parameter or any increasing
 function of it (including the mean value parameter) corresponding to
 a UMP or UMPU test for a regular full exponential family whose canonical
-statistic is probabilistically and topologically discrete is convex,
+statistic is probabilistically and order discrete is convex,
 and its membership function is continuous.
 
 Let $\mu$ denote the mean value parameter and $x$ the observed
