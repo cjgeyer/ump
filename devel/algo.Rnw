@@ -94,7 +94,7 @@ $x$, then we reject the null with probability $\phi(x)$.
 But, of course, it also depends on the
 significance level $\alpha$ and the hypothesized value $\theta$ of
 the parameter
-under the null hypothesis.  So we, following \citet{geyer-meeden} write
+under the null hypothesis.  So we, following \citet{geyer-meeden}, write
 it $\phi(x, \alpha, \theta)$.  By making the test \emph{abstract randomized}
 \citet{geyer-meeden} mean: describe this function $\phi$ and stop there.
 
@@ -113,7 +113,7 @@ that probability is also given by numbers between zero and one,
 and probability also is thought to describe uncertainty, so is fuzzy set theory
 just probability theory under another name?  No.  The operations
 of fuzzy set theory \citep{fuzz} have nothing to do with probability
-theory.  It is really different.  But \citep{geyer-meeden} do not use
+theory.  It is really different.  But \citet{geyer-meeden} do not use
 any of those operations.  They just use some of the terminology,
 mainly membership functions.  They also use the term \emph{crisp}.
 
@@ -127,8 +127,8 @@ So classical confidence intervals (which are ordinary sets) are
 crisp fuzzy sets described by zero-or-one-valued membership functions.
 To have abstract randomized confidence intervals (dual to classical
 UMP and UMPU tests) \citet{geyer-meeden} need general fuzzy sets
-described by membership functions that take values in the closed
-interval $[0, 1]$.
+described by membership functions that take values between
+zero and one.
 
 \citet{geyer-meeden} say the following about the critical function.
 \begin{itemize}
@@ -1583,7 +1583,7 @@ is that the test is UMPU whether considered conditionally or unconditionally.
 % only their sum.  Analysis of that situation here would just repeat that
 % section word for word except for references to conditioning on $\mathbf{U}(x)$.
 
-\section{Applications} \label{sec:models}
+\section{Calculations For Distributions} \label{sec:models}
 
 \subsection{Binomial} \label{sec:model-binomial}
 
@@ -1979,7 +1979,7 @@ $$
 $$
 
 And in hindsight we see that we have invented the conditional, exact,
-uniformly most whatever (UMW) competitor of McNemar's test (Lindgren,
+UMP or UMPU competitor of McNemar's test (Lindgren,
 \emph{Statistical Theory}, pp.~381--383).
 
 \section{Algorithms} \label{sec:algorithms}
@@ -2041,68 +2041,56 @@ know where they are).
     the knots will make plots not show the knots.
 \end{itemize}
 
-\REVISED
+When we return values of the function at points not specified by the user,
+we will also have to return those $\alpha$ values (for a fuzzy $P$-value)
+or $\theta$ values (for a fuzzy confidence interval).
+Thus we will return a list, and we might as well return a list specifying
+everything: $\phi(x, \alpha, \theta)$, $x$, $\alpha$, $\theta$, and the
+distribution and type of test (lower, upper, two-tailed), or, in the case
+of wanting the PDF of the fuzzy $P$-value,
+$\partial \phi(x, \alpha, \theta) / \partial \alpha$ rather than
+$\phi(x, \alpha, \theta)$.
 
-But we are also interested in fuzzy $P$-values, where we compute
-$\phi(x, \alpha, \theta)$ for fixed $x$ and $\theta$ but for all $\alpha$
-and this is a continuous piecewise linear function, so rather than just
-returning the values for a vector of $\alpha$ values, we could also return
-the values at the knots.  Of course, it would be a different R function
-that did that.
-
-And we are also interested in fuzzy confidence intervals, where we compute
-$1 - \phi(x, \alpha, \theta)$ for fixed $x$ and $\alpha$ but for all $\theta$
-and this is a continuous function that is equal to one on an interval
-(the \emph{core} of the fuzzy interval), equal to zero outside another
-interval (the \emph{support} of the fuzzy interval), and nonlinear elsewhere.
-So we want to distinguish the core and support, but otherwise just evaluate
-at a vector of $\theta$ values.  Of course, it would be a different R function
-that did that.
-
-There is little interest in functions that vectorize over \code{x}.
-Usually \code{x} is the observed data.  But there is no telling what
-any user at any time in the future may want.  So this should be allowed.
-
-For completeness, we should also provide fuzzy decision functions that
-$\phi(x, \alpha, \theta)$ for fixed $\alpha$ and $\theta$ but for all $x$.
-This function can return $C_1$ and $C_2$ and $\phi(x, \alpha, \theta)$
-for $T(x) = C_1$ and $T(x) = C_2$, it being understood
-that \eqref{eq:umpu-crit} gives the values for other $x$.
-
-Thus we need
-\begin{itemize}
-\item a general function that calculates $\phi(x, \alpha, \theta)$ for
-    any vectors $x$, $\alpha$, and $\theta$ following the usual recycling
-    rule for arguments of different length.
-\item a fuzzy $P$-value function that calculates $\phi(x, \fatdot, \theta)$ for
-    scalar $x$ and $\theta$.  It returns vectors of knots and values of
-    a continuous piecewise linear function.
-\item a fuzzy confidence interval function that calculates
-    $\phi(x, \alpha, \fatdot)$ for scalar $x$ and $\alpha$.  It returns
-\begin{itemize}
-\item the core (an interval),
-\item the support (an interval containing the support),
-\item a sequence of $\theta$ values between the lower endpoint of the support
-    and the lower endpoint of the core and the corresponding
-    $1 - \phi(x, \alpha, \theta)$ values,
-\item a sequence of $\theta$ values between the upper endpoint of the core
-    and the upper endpoint of the support and the corresponding
-    $1 - \phi(x, \alpha, \theta)$ values.
-\end{itemize}
-\item a fuzzy decision function that calculates
-    $\phi(\fatdot, \alpha, \theta)$ for scalar $\alpha$ and $\theta$.
-    It returns $C_1$, $C_2$, $\gamma_1$, and $\gamma_2$ in
-   \eqref{eq:umpu-crit}.
-\end{itemize}
-
-In the latter three cases (fuzzy $P$-value, fuzzy confidence interval,
-fuzzy decision)
-the function can gain considerable efficiency in doing its specialized job.
+We need make no special allowance for fuzzy decision functions
+$\phi(\fatdot, \alpha, \theta)$, since the usual R behavior will
+accomodate that.
 
 The package should also supply the usual d, p, q, and r functions
 (like \code{dbinom}, \code{pbinom}, \code{qbinom}, and \code{rbinom})
 for the noncentral hypergeometric, and noncentral negative hypergeometric
 distributions.
+
+\subsection{Parameters}
+
+As seen in Algorithm~\ref{alg:lots-of-work} and various theorems, testing
+whether $x = \mu$ or not is important.  We will not be able to do this with
+exact arithmetic if $\mu$ is calculated rather than provided by the user.
+Thus we should use $\mu$ as the parameter if at all possible.
+\begin{itemize}
+\item For the binomial distribution, we should use $\mu = n p$ as the
+    parameter rather than $p$, which R uses for \code{dbinom} and friends.
+    If we have to multiply $n$ times $p$, that will not be exact arithmetic,
+    so the test may be in error.
+\item For the Poisson distribution, $\mu$ is already the usual parameter.
+\item For the negative binomial distribution, $\mu$ is already an optional
+    parameter in \code{dnbinom} and friends.  And the C interface provided
+    to R packages has C functions \verb@dnbinom_mu@, \verb@pnbinom_mu@,
+    \verb@qnbinom_mu@, \verb@rnbinom_mu@ that use $\mu$ as a parameter.
+\item For the noncentral hypergeometric distribution we have the problem
+    that we do not have a formula expressing the mapping between canonical
+    and mean value parameters.  So we may have to use the canonical parameter
+    for it.  Exception: for $\theta = 0$ we know $\mu = n K / N$
+    in the notation of Section~\ref{sec:noncentral-hypergeometric},
+    that is, when we have regular hypergeometric rather than noncentral
+    hypergeometric.  Since this is a widely used null hypothesis,
+    we want to special case this.
+\item Similarly, for the noncentral negative hypergeometric distribution we
+    also must use the canonical parameter, except when $\theta = 0$ when
+    we know $\mu = r K / (N - K + 1)$
+    in the notation of Section~\ref{sec:noncentral-negative-hypergeometric}.
+\end{itemize}
+
+
 
 \REVISED
 
