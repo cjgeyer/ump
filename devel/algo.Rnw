@@ -7,7 +7,7 @@
 \usepackage{ifthen}
 \usepackage{indentfirst}
 \usepackage{natbib}
-\usepackage[colorlinks=true,citecolor=blue,urlcolor=blue]{hyperref}
+\usepackage[colorlinks=true,allcolors=blue]{hyperref}
 \usepackage{url}
 \usepackage{doi}
 
@@ -135,11 +135,11 @@ zero and one.
 \item The function $\phi(\fatdot, \alpha, \theta)$ they call the
     fuzzy (or abstract randomized) decision function for the hypothesis test
     having significance level $\alpha$ and null hypothesis $\theta$.
-\item The function $1 - \phi(x, \alpha, \fatdot)$ they call
-    the (membership function in the sense of fuzzy set theory) of the
+\item The function $1 - \phi(x, \alpha, \fatdot)$ they call the
+    (membership function in the sense of fuzzy set theory of the)
     fuzzy confidence interval with coverage $1 - \alpha$ and observed data $x$.
 \item The function $\phi(x, \fatdot, \theta)$ they call the
-    (distribution function of) the abstract randomized (or fuzzy) $P$-value
+    (distribution function of the) abstract randomized (or fuzzy) $P$-value
     for the hypothesis test having null hypothesis $\theta$ and
     observed data $x$.
 \end{itemize}
@@ -215,7 +215,7 @@ property (that's why randomized tests were invented by Neyman and Pearson).
 The interpretation of the fuzzy $P$-value is simplest.  The function
 $\phi(x, \fatdot, \theta)$ is a distribution function.  Let $P$ denote
 a random variable that has this distribution.  Then the test that rejects
-the null when $P \le \alpha$ is the classical UMP or UMPU test.
+the null when $P \le \alpha$ is the classical UMP or UMPU randomized test.
 All \citet{geyer-meeden} are saying in this case is report
 the \emph{distribution of $P$} and stop there rather than going on to
 generating a number that is purported to be a realization of $P$ or
@@ -255,7 +255,8 @@ intervals.
     for any other fuzzy confidence interval satisfying
     exactness and unbiasedness.  The fuzzy confidence interval dual to the
     UMPU test has less coverage for any false parameter value than any
-    other fuzzy confidence interval.
+    other fuzzy confidence interval having the exactness and unbiasednessi
+    properties.
 \end{itemize}
 
 \subsection{Computing}
@@ -545,6 +546,7 @@ the UMPU test ignores both data and the hypothesized value $p$ under the
 null hypothesis: the test rejects the null hypothesis with probability $\alpha$
 regardless of either of them.
 
+Why?
 For any randomized test to be unbiased we must have
 $$
    \gamma_1 (1 - p) + \gamma_2 p \ge \alpha
@@ -615,7 +617,7 @@ very large significance levels: $\alpha \ge 1 - p$.
 Hence this special case is of no practical importance,
 although
 it is of some computational importance to get every case right, no weird
-bogus results or crashes in unusual special cases.
+bogus results or software crashes in unusual special cases.
 
 Returning to the general case, assume for a second that we have
 particular $C_1$ and $C_2$ that work for some $x$, $\alpha$, and $\theta$.
@@ -771,8 +773,10 @@ We will say that a (probabilistically) discrete random variable
 or its distribution
 is \emph{order discrete} if the support, considered as a subspace
 of the real line, is a discrete ordered set: for every point $x$ of the
-support except the least there is a next lower point in the support,
-and for every point $x$ of the support except the greatest there is
+support except the least (if there is a least) there is a next lower point
+in the support,
+and for every point $x$ of the support except the greatest
+(if there is a greatest) there is
 a next higher point in the support.
 This property
 holds for all of our distributions of interest (which are integer valued).
@@ -784,6 +788,7 @@ A mixture of an atom at $-1$ and $1 / X$ where $X$ is Poisson does the job.
 No point above $-1$ is next to it.  But I do not know what an example
 of such a distribution would be that has a real application.
 
+\pagebreak[3]
 \begin{theorem} \label{th:fuzzy-df}
 Assume a regular full one-parameter exponential family such that the
 canonical statistic is probabilistically and order discrete.
@@ -805,7 +810,7 @@ In aid of proving this theorem we state an algorithm
 \caption{Computing the UMPU Critical Function}
 \label{alg:lots-of-work}
 Assume a regular full one-parameter exponential family such that the
-canonical statistic is order discrete.
+canonical statistic is probabilistically and order discrete.
 For fixed $\theta$, the following computes the critical function of the
 UMPU test $\phi(x, \alpha, \theta)$ for all $x$ and $\alpha > 0$.
 \begin{enumerate}
@@ -1087,15 +1092,15 @@ and $\partial \gamma_2 / \partial \theta < 0$.
 \begin{proof}
 Under the assumptions, we have $C_1 < \mu < C_2$ by Theorem~\ref{th:fuzzy-df}.
 To simplify notation
-assume $T(X) = X$ so we have a standard exponential family, assume
+assume $T(X) = X$ so we have a standard exponential family, define
 $j = 3 - i$, and define
 \begin{align*}
    A_\text{in} & = \set{ x : C_1 < x < C_2 }
    \\
    A_\text{out} & = \set{ x : x < C_1 \opor C_2 < x }
 \end{align*}
-(either of these can be empty, but not both by the more than two points
-assumption.
+(either of these can be empty, but not both by the assumption the support
+has more than two points).
 
 Now we can rewrite both \eqref{eq:gamma-1} and \eqref{eq:gamma-2} as
 \begin{align*}
@@ -1135,7 +1140,7 @@ This equation can be differentiated under the integral sign giving
 lemma can be taken to be a constant plus
 $e^{x (\theta - \varepsilon)} + e^{x (\theta + \varepsilon)}$ which is
 guaranteed to have finite integral for some $\varepsilon > 0$ by the
-assumption that we have a regular exponential family.
+assumption that we have a regular full exponential family.
 
 In case $i = 1$ and $0 < \alpha < 1$ in \eqref{eq:derivative}
 the integrand is positive for $x \in A_\text{out} \cup A_\text{in}$ and
@@ -1153,7 +1158,7 @@ between zero and one (so this formula defines the critical function of a
 UMP upper-tailed test), and if the support of the canonical statistic has
 more than one point, then $\partial \gamma / \partial \theta < 0$.
 
-For the UMP lower-tailed test all inequalities are reversed so,
+For the UMP lower-tailed test all inequalities are reversed, so
 $\partial \gamma / \partial \theta > 0$.
 \end{lemma}
 \begin{proof}
@@ -1196,7 +1201,8 @@ and its membership function is continuous.
 Let $\mu$ denote the mean value parameter and $x$ the observed
 value of the canonical statistic.  The membership function is nondecreasing
 for $\mu < x$ and nonincreasing for $\mu > x$.
-If the maximum less than one, then the maximum occurs at $\mu = x$
+If the maximum of the membership function is less than one,
+then the maximum occurs at $\mu = x$
 where \eqref{eq:umpu-spec-a} and \eqref{eq:umpu-spec-b} and \eqref{eq:gamma-1}
 and \eqref{eq:gamma-2} all hold simultaneously.
 If the maximum of the membership function is one,
@@ -1438,19 +1444,20 @@ It follows that as $\mu \to \infty$
    E_\mu\{I_{(- \infty, \mu)}(X) \phi(X, \alpha, \mu)\} & \to 0
    \\
    E_\mu\{X I_{(- \infty, \mu)}(X) \phi(X, \alpha, \mu)\} & \to 0
-   \\
+\end{align*}
+\REVISED
+
+hence from \eqref{eq:umpu-a} and \eqref{eq:umpu-b}
+\begin{align*}
    E_\mu\{I_{(\mu, \infty)}(X) \phi(X, \alpha, \mu)\} & \to \alpha
    \\
-   E_\mu\{X I_{(\mu, \infty)}(X) \phi(X, \alpha, \mu)\} & \to \alpha \mu
+   E_\mu\{X I_{(\mu, \infty)}(X) \phi(X, \alpha, \mu)\} / \mu & \to \alpha
 \end{align*}
-but the latter two are impossible because
+so
 $$
-   E_\mu\{X I_{(\mu, \infty)}(X) \phi(X, \alpha, \mu)\}
-   \ge
-   C_2 \cdot E_\mu\{I_{(\mu, \infty)}(X) \phi(X, \alpha, \mu)\}
+   E_\mu\left\{\left(\frac{X}{\mu} - 1\right) I_{(\mu, \infty)}(X)
+   \phi(X, \alpha, \mu)\right\} \to 0
 $$
-and the latter goes to infinity.  Hence the assumption to get a contradiction
-is false, and $C_1 \to \infty$.
 \end{proof}
 
 \subsubsection{Summary} \label{sec:summary-confint}
@@ -1458,7 +1465,7 @@ is false, and $C_1 \to \infty$.
 Fuzzy confidence intervals (more precisely, the membership function
 thereof, but we won't be pedantic about that here)  behave as follows.
 \begin{itemize}
-\item If the sample space of the canonical statistic has two points,
+\item If the support of the canonical statistic has two points,
 then the fuzzy confidence interval is constant, equal to $1 - \alpha$ for all
 values of the parameter.  Henceforth we assume the sample space has
 more than two points.

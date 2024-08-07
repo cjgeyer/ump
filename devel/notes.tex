@@ -24,9 +24,28 @@
 
 \begin{document}
 
+Equation~\eqref{a-eq:cond-two-c} is repeated here
+\begin{equation} \label{eq:cond-two-c}
+   E_\theta\{ (\mu - X) I_{(- \infty, \mu)}(X) \phi(X, \alpha, \theta) \}
+   =
+   E_\theta\{ (X - \mu) I_{(\mu, \infty)}(X) \phi(X, \alpha, \theta) \}
+\end{equation}
+It says that UMPU tests are equal tailed in a weird sense: the contributions
+to the expectations of $X - \mu$ are the same in absolute value in both tails.
+
+In order to use this equation to develop an algorithm we need to know more
+about the behavior of each side.
+
+From Lemma~\ref{a-lem:gamma-derivative} in the main document we know
+$\phi(x, \alpha, \theta)$ is increasing in $\alpha$ for fixed $\theta$.
+Hence the same is true of the both sides of \eqref{eq:cond-two-c}.
+
+\REVISED
+
+
 \section{UMPU Dependence on Parameter}
 
-\subsection{Fuzzy $P$-Values}
+\subsection[Fuzzy P-Values]{Fuzzy $P$-Values}
 
 In calculating fuzzy $P$-values, which are critical functions
 $\phi(x, \fatdot, \theta)$ for fixed $x$ and $\theta$,
